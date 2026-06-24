@@ -633,12 +633,12 @@ function buildWeekAheadNarrative(openTasks) {
   const highPriority = openTasks
     .filter(t => t.priority === "high")
     .sort((a, b) => {
-      const aDue = a.due_date || "9999-12-31";
-      const bDue = b.due_date || "9999-12-31";
+      const aDue = a.due || "9999-12-31";
+      const bDue = b.due || "9999-12-31";
       return aDue.localeCompare(bDue);
     });
   const taskTitles = highPriority.slice(0, 4).map(t => escapeHtml(t.title));
-  const overdueCount = highPriority.filter(t => daysUntil(t.due_date) < 0).length;
+  const overdueCount = highPriority.filter(t => daysUntil(t.due) < 0).length;
   const prepNotes = normalizeList(DATA.week_ahead?.prep_notes);
   const nextMeetings = DATA.calendar
     .filter(e => e.date > DATA.today && e.event_type === "work")
@@ -680,11 +680,11 @@ function init() {
   const ub = document.getElementById("urgent-bar");
   const urgentDismissals = loadUrgentDismissals();
   DATA.urgent.forEach(u => {
-    const key = hashStr(u.item);
-    const icon = u.level === "HIGH" ? "▲ HIGH" : "● MED";
-    const iconClass = u.level === "HIGH" ? "" : "amber";
+    const key = hashStr(u.title);
+    const icon = u.severity === "red" ? "▲ HIGH" : "● MED";
+    const iconClass = u.severity === "red" ? "" : "amber";
     const isDone = !!urgentDismissals[key];
-    ub.innerHTML += `<div class="urgent-item${isDone ? " done" : ""}" data-urgent-key="${key}"><span class="urgent-check" onclick="toggleUrgentDone('${key}')">${isDone ? "[✓]" : "[ ]"}</span><span class="urgent-icon ${iconClass}">${icon}</span><span class="urgent-text">${escapeHtml(u.item)}</span></div>`;
+    ub.innerHTML += `<div class="urgent-item${isDone ? " done" : ""}" data-urgent-key="${key}"><span class="urgent-check" onclick="toggleUrgentDone('${key}')">${isDone ? "[✓]" : "[ ]"}</span><span class="urgent-icon ${iconClass}">${icon}</span><span class="urgent-text">${escapeHtml(u.title)}</span></div>`;
   });
 
   // Today's calendar
@@ -695,11 +695,11 @@ function init() {
     tc.innerHTML += `<div class="event-row"><span style="font-size:14px;color:var(--muted);">No events</span></div>`;
   } else {
     todayEvents.forEach(e => {
-      const tagClass = e.type === "work" ? "tag-work" : e.type === "external" ? "tag-external" : "tag-personal";
+      const tagClass = e.tag === "work" ? "tag-work" : e.tag === "external" ? "tag-external" : "tag-personal";
       tc.innerHTML += `<div class="event-row">
         <span class="event-time">${escapeHtml(e.time)}</span>
         <span class="event-title">${escapeHtml(e.title)}</span>
-        <span class="event-tag ${tagClass}">${e.type}</span>
+        <span class="event-tag ${tagClass}">${e.tag}</span>
       </div>`;
     });
   }
@@ -708,11 +708,11 @@ function init() {
   const tn = document.getElementById("today-notes");
   const radarItems = [];
   const todayTasks = DATA.tasks
-    .filter(t => t.status === "open" && !completions[String(t.id)] && (t.priority === "high" || daysUntil(t.due_date) === 0 || daysUntil(t.due_date) < 0))
+    .filter(t => t.status === "open" && !completions[String(t.id)] && (t.priority === "high" || daysUntil(t.due) === 0 || daysUntil(t.due) < 0))
     .slice(0, 4);
 
   todayTasks.forEach(t => {
-    const due = daysUntil(t.due_date);
+    const due = daysUntil(t.due);
     let label = "Priority";
     let color = "var(--amber)";
     if (due < 0) {
@@ -760,7 +760,7 @@ function init() {
       winsGrid.innerHTML += `<div class="win-row">
         <div class="win-category">${escapeHtml(w.category)}</div>
         <div class="win-body">
-          <div class="win-text">${escapeHtml(w.win)}</div>
+          <div class="win-text">${escapeHtml(w.text)}</div>
           ${w.why ? `<div class="win-why">${escapeHtml(w.why)}</div>` : ""}
         </div>
       </div>`;
@@ -868,19 +868,19 @@ function init() {
     const label = projLabels[proj] || proj;
     let html = `<div class="project-group"><div class="project-label"><span class="proj-dot" style="background:${color}"></span>${label}</div>`;
     byProject[proj].forEach(t => {
-      const days = daysUntil(t.due_date);
+      const days = daysUntil(t.due);
       let dueClass = "", dueLabel = "";
-      if (t.due_date) {
+      if (t.due) {
         if (days < 0) { dueClass = "overdue"; dueLabel = `${Math.abs(days)}d overdue`; }
         else if (days <= 3) { dueClass = "soon"; dueLabel = days === 0 ? "today" : `${days}d`; }
-        else { dueLabel = fmtDate(t.due_date); }
+        else { dueLabel = fmtDate(t.due); }
       }
       const isDone = !!completions[String(t.id)];
       html += `<div class="task-row${isDone ? " task-done" : ""}" data-task-id="${t.id}">
         <span class="priority-dot p-${t.priority}"></span>
-        <span class="task-check" onclick="toggleTaskDone(${t.id})">${isDone ? "[✓]" : "[ ]"}</span>
+        <span class="task-check" onclick="toggleTaskDone('${t.id}')">${isDone ? "[✓]" : "[ ]"}</span>
         <span class="task-title" title="${escapeHtml(t.notes || '')}">${escapeHtml(t.title)}</span>
-        ${t.due_date ? `<span class="task-due ${dueClass}">${dueLabel}</span>` : ""}
+        ${t.due ? `<span class="task-due ${dueClass}">${dueLabel}</span>` : ""}
       </div>`;
     });
     html += `</div>`;
@@ -929,16 +929,12 @@ function init() {
   const mg = document.getElementById("meetings-grid");
   document.getElementById("stat-meetings").textContent = DATA.meetings.length;
   DATA.meetings.forEach(m => {
-    const participants = normalizeList(m.participants).join(", ");
-    const keyDecisions = normalizeList(m.key_decisions).slice(0, 2).join(" | ");
-    const actionItems = normalizeList(m.action_items).slice(0, 2).join(" | ");
     mg.innerHTML += `<div class="meeting-row">
       <div class="meeting-date-col">${fmtDate(m.date)}</div>
       <div class="meeting-body">
         <div class="meeting-title">${escapeHtml(m.title)}</div>
-        <div class="meeting-people">${escapeHtml(participants)}</div>
-        ${keyDecisions ? `<div style="font-size:13px;color:var(--muted2);margin-top:3px;">${escapeHtml(keyDecisions)}</div>` : ""}
-        ${actionItems ? `<div style="font-size:13px;color:var(--amber);margin-top:3px;">→ ${escapeHtml(actionItems)}</div>` : ""}
+        <div class="meeting-people">${escapeHtml(m.people || "")}</div>
+        ${m.summary ? `<div style="font-size:13px;color:var(--muted2);margin-top:3px;">${escapeHtml(m.summary)}</div>` : ""}
       </div>
     </div>`;
   });
