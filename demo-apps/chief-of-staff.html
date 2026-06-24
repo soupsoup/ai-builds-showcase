@@ -1,0 +1,1133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chief of Staff</title>
+<style>
+  :root {
+    --bg: #0d0d0d;
+    --surface: #141414;
+    --surface2: #1a1a1a;
+    --border: #222;
+    --border2: #2a2a2a;
+    --text: #e0e0e0;
+    --muted: #555;
+    --muted2: #777;
+    --red: #ef4444;
+    --amber: #f59e0b;
+    --blue: #60a5fa;
+    --green: #22c55e;
+    --indigo: #818cf8;
+    --mono: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+    --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 15px; line-height: 1.5; min-height: 100vh; }
+
+  /* Layout */
+  .shell { display: grid; grid-template-columns: 220px 1fr; min-height: 100vh; }
+  .sidebar { background: var(--surface); border-right: 1px solid var(--border); padding: 20px 0; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
+  .main { padding: 24px; overflow-y: auto; }
+
+  /* Sidebar */
+  .logo { padding: 0 16px 20px; border-bottom: 1px solid var(--border); margin-bottom: 16px; }
+  .logo-name { font-size: 13px; font-weight: 600; color: var(--muted2); letter-spacing: 0.08em; text-transform: uppercase; }
+  .logo-date { font-size: 17px; font-weight: 600; color: var(--text); margin-top: 2px; }
+  .logo-time { font-size: 13px; color: var(--muted); margin-top: 1px; font-family: var(--mono); }
+
+  .nav-section { padding: 0 16px; margin-bottom: 8px; }
+  .nav-label { font-size: 12px; font-weight: 600; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 6px; }
+  .nav-item { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 4px; cursor: pointer; color: var(--muted2); font-size: 14px; transition: all 0.1s; text-decoration: none; }
+  .nav-item:hover, .nav-item.active { background: var(--surface2); color: var(--text); }
+  .nav-item .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--muted); flex-shrink: 0; }
+  .nav-item .dot.red { background: var(--red); }
+  .nav-item .dot.amber { background: var(--amber); }
+  .nav-item .dot.green { background: var(--green); }
+  .nav-item .dot.indigo { background: var(--indigo); }
+  .nav-badge { margin-left: auto; background: var(--surface2); border: 1px solid var(--border2); color: var(--muted2); font-size: 12px; padding: 1px 5px; border-radius: 10px; font-family: var(--mono); }
+
+  .sidebar-stats { padding: 16px; border-top: 1px solid var(--border); margin-top: 16px; }
+  .stat-row { display: flex; justify-content: space-between; align-items: center; padding: 4px 0; }
+  .stat-label { font-size: 13px; color: var(--muted); }
+  .stat-val { font-size: 13px; font-family: var(--mono); color: var(--muted2); }
+
+  /* Main sections */
+  .section { margin-bottom: 28px; }
+  .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+  .section-title { font-size: 13px; font-weight: 600; color: var(--muted2); letter-spacing: 0.08em; text-transform: uppercase; }
+  .section-meta { font-size: 13px; color: var(--muted); font-family: var(--mono); }
+
+  /* Urgent bar */
+  .urgent-bar { background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--red); border-radius: 4px; padding: 10px 14px; margin-bottom: 20px; display: flex; gap: 16px; flex-wrap: wrap; }
+  .urgent-item { display: flex; align-items: flex-start; gap: 8px; flex: 1; min-width: 200px; }
+  .urgent-icon { font-size: 13px; font-family: var(--mono); color: var(--red); flex-shrink: 0; margin-top: 1px; }
+  .urgent-icon.amber { color: var(--amber); }
+  .urgent-text { font-size: 14px; color: var(--text); }
+  .urgent-check { font-size: 13px; font-family: var(--mono); color: var(--muted); cursor: pointer; user-select: none; flex-shrink: 0; margin-top: 1px; }
+  .urgent-check:hover { color: var(--green); }
+  .urgent-item.done { opacity: 0.45; }
+  .urgent-item.done .urgent-text { text-decoration: line-through; }
+  .urgent-item.done .urgent-check { color: var(--green); }
+
+  /* Today grid */
+  .today-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 4px; padding: 14px; }
+  .card-title { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 10px; }
+  .event-row { display: flex; gap: 10px; align-items: baseline; padding: 5px 0; border-bottom: 1px solid var(--border); }
+  .event-row:last-child { border-bottom: none; }
+  .event-time { font-size: 13px; font-family: var(--mono); color: var(--muted2); width: 72px; flex-shrink: 0; }
+  .event-title { font-size: 14px; color: var(--text); }
+  .event-tag { font-size: 12px; padding: 1px 5px; border-radius: 3px; margin-left: auto; flex-shrink: 0; }
+  .tag-work { background: rgba(129,140,248,0.15); color: var(--indigo); }
+  .tag-personal { background: rgba(85,85,85,0.2); color: var(--muted2); }
+  .tag-external { background: rgba(96,165,250,0.15); color: var(--blue); }
+  .allday-row { padding: 5px 0; border-bottom: 1px solid var(--border); font-size: 14px; color: var(--muted2); }
+  .allday-row:last-child { border-bottom: none; }
+
+  /* Week ahead */
+  .week-day { margin-bottom: 12px; }
+  .week-day-label { font-size: 13px; font-weight: 600; color: var(--muted); margin-bottom: 5px; display: flex; align-items: center; gap: 6px; }
+  .week-day-label .day-name { color: var(--muted2); }
+  .week-day-label .day-date { font-family: var(--mono); font-size: 12px; }
+  .week-event { display: flex; gap: 10px; padding: 5px 8px; border-radius: 3px; margin-bottom: 2px; background: var(--surface2); }
+  .week-event-time { font-size: 13px; font-family: var(--mono); color: var(--muted); width: 72px; flex-shrink: 0; }
+  .week-event-title { font-size: 14px; color: var(--text); }
+  .week-narrative { background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--amber); border-radius: 4px; padding: 12px 14px; margin-bottom: 14px; }
+  .week-narrative p { font-size: 14px; color: var(--text); margin-bottom: 10px; }
+  .week-narrative p:last-child { margin-bottom: 0; }
+
+  /* Tasks */
+  .project-group { margin-bottom: 16px; }
+  .project-label { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+  .project-label .proj-dot { width: 5px; height: 5px; border-radius: 50%; }
+  .task-row { display: flex; align-items: baseline; gap: 10px; padding: 6px 8px; border-radius: 3px; margin-bottom: 1px; background: var(--surface); border: 1px solid var(--border); }
+  .task-row:hover { border-color: var(--border2); }
+  .task-check { font-size: 13px; font-family: var(--mono); color: var(--muted); flex-shrink: 0; cursor: pointer; user-select: none; }
+  .task-check:hover { color: var(--green); }
+  .task-row.task-done .task-check { color: var(--green); }
+  .task-row.task-done .task-title { text-decoration: line-through; color: var(--muted); }
+  .task-row.task-done .priority-dot { opacity: 0.25; }
+  .task-row.task-done .task-due { opacity: 0.4; }
+  .task-title { font-size: 14px; color: var(--text); flex: 1; }
+  .task-due { font-size: 12px; font-family: var(--mono); color: var(--muted); margin-left: auto; flex-shrink: 0; }
+  .task-due.overdue { color: var(--red); }
+  .task-due.soon { color: var(--amber); }
+  .priority-dot { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; margin-top: 4px; }
+  .p-high { background: var(--red); }
+  .p-normal { background: var(--muted); }
+  .p-low { background: var(--border2); }
+
+  /* Inbox */
+  .inbox-tabs { display: flex; gap: 0; margin-bottom: 12px; border-bottom: 1px solid var(--border); }
+  .tab { padding: 6px 14px; font-size: 13px; font-weight: 600; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+  .tab.active { color: var(--text); border-bottom-color: var(--text); }
+  .email-row { display: flex; gap: 10px; padding: 8px; border-radius: 3px; margin-bottom: 2px; background: var(--surface); border: 1px solid var(--border); cursor: default; }
+  .email-row:hover { border-color: var(--border2); }
+  .email-sender { font-size: 13px; font-weight: 600; color: var(--text); width: 140px; flex-shrink: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .email-subject { font-size: 14px; color: var(--muted2); flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .email-snippet { font-size: 13px; color: var(--muted); display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .email-date { font-size: 12px; font-family: var(--mono); color: var(--muted); flex-shrink: 0; }
+  .email-body { flex: 1; min-width: 0; }
+
+  /* Meetings */
+  .meeting-row { display: flex; gap: 10px; padding: 8px; border-radius: 3px; margin-bottom: 2px; background: var(--surface); border: 1px solid var(--border); }
+  .meeting-date-col { font-size: 13px; font-family: var(--mono); color: var(--muted); width: 50px; flex-shrink: 0; padding-top: 1px; }
+  .meeting-body { flex: 1; min-width: 0; }
+  .meeting-title { font-size: 14px; color: var(--text); }
+  .meeting-people { font-size: 13px; color: var(--muted); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  /* Quick Capture */
+  .capture-box { width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: 4px; padding: 12px; color: var(--text); font-family: var(--sans); font-size: 15px; resize: vertical; min-height: 80px; outline: none; }
+  .capture-box:focus { border-color: var(--border2); }
+  .capture-box::placeholder { color: var(--muted); }
+  .capture-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; }
+  .capture-hint { font-size: 13px; color: var(--muted); }
+  .btn { background: var(--surface2); border: 1px solid var(--border2); color: var(--muted2); font-size: 13px; padding: 5px 12px; border-radius: 3px; cursor: pointer; font-family: var(--sans); }
+  .btn:hover { color: var(--text); border-color: var(--muted); }
+  .btn.primary { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.15); color: var(--text); }
+
+  /* Updated timestamp */
+  .updated { font-size: 12px; font-family: var(--mono); color: var(--muted); }
+  .pay-badge { background: rgba(34,197,94,0.15); color: var(--green); font-size: 12px; padding: 2px 7px; border-radius: 3px; font-weight: 600; }
+
+  /* Weekly Wins */
+  .wins-slack { background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--green); border-radius: 4px; padding: 12px 14px; margin-bottom: 14px; font-size: 14px; color: var(--text); line-height: 1.6; }
+  .wins-slack-label { font-size: 12px; font-weight: 600; color: var(--green); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 6px; }
+  .win-row { display: flex; gap: 12px; padding: 8px; border-radius: 3px; margin-bottom: 2px; background: var(--surface); border: 1px solid var(--border); }
+  .win-row:hover { border-color: var(--border2); }
+  .win-category { font-size: 12px; font-family: var(--mono); color: var(--muted2); width: 120px; flex-shrink: 0; padding-top: 1px; }
+  .win-body { flex: 1; min-width: 0; }
+  .win-text { font-size: 14px; color: var(--text); }
+  .win-why { font-size: 13px; color: var(--muted); margin-top: 2px; }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+  /* Light mode */
+  [data-theme="light"] {
+    --bg: #f4f4f5;
+    --surface: #ffffff;
+    --surface2: #ebebec;
+    --border: #e4e4e7;
+    --border2: #d4d4d8;
+    --text: #18181b;
+    --muted: #a1a1aa;
+    --muted2: #52525b;
+  }
+
+  /* Theme toggle */
+  .logo-row { display: flex; align-items: flex-start; justify-content: space-between; }
+  .logo-icons { display: flex; gap: 4px; flex-shrink: 0; }
+  .theme-toggle { background: none; border: 1px solid var(--border); border-radius: 4px; color: var(--muted2); font-size: 14px; padding: 2px 6px; cursor: pointer; line-height: 1; margin-top: 2px; flex-shrink: 0; }
+  .theme-toggle:hover { border-color: var(--border2); color: var(--text); }
+
+  /* Display settings panel */
+  .settings-panel { margin-top: 10px; padding: 10px; background: var(--surface2); border-radius: 4px; border: 1px solid var(--border); }
+  .settings-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .settings-row:last-of-type { margin-bottom: 0; }
+  .settings-label { font-size: 12px; color: var(--muted); }
+  .size-controls { display: flex; align-items: center; gap: 6px; }
+  .size-btn { background: var(--surface); border: 1px solid var(--border2); color: var(--text); font-size: 13px; font-weight: 600; padding: 1px 8px; border-radius: 3px; cursor: pointer; font-family: var(--mono); line-height: 1.6; }
+  .size-btn:hover { border-color: var(--muted); }
+  .size-val { font-size: 12px; font-family: var(--mono); color: var(--muted2); min-width: 38px; text-align: center; }
+  .font-select { background: var(--surface); border: 1px solid var(--border2); color: var(--text); font-size: 12px; padding: 3px 6px; border-radius: 3px; cursor: pointer; font-family: var(--sans); width: 130px; }
+  .settings-reset { display: block; margin-top: 8px; background: none; border: none; color: var(--muted); font-size: 11px; cursor: pointer; padding: 0; text-decoration: underline; }
+  .settings-reset:hover { color: var(--text); }
+
+  /* Week In Review */
+  .wir-block { margin-bottom: 14px; }
+  .wir-block-label { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; }
+  .wir-item { display: flex; gap: 10px; padding: 7px 10px; border-radius: 3px; margin-bottom: 2px; background: var(--surface); border: 1px solid var(--border); }
+  .wir-item-text { font-size: 14px; color: var(--text); flex: 1; }
+</style>
+</head>
+<body>
+
+<div class="shell">
+  <!-- SIDEBAR -->
+  <nav class="sidebar">
+    <div class="logo">
+      <div class="logo-row">
+        <div>
+          <div class="logo-name">Demo Operator</div>
+          <div class="logo-date" id="today-label">Saturday, April 11</div>
+          <div class="logo-time updated" id="updated-label">Updated 2026-04-11 07:00</div>
+        </div>
+        <div class="logo-icons">
+          <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" title="Toggle light/dark mode">☀</button>
+          <button class="theme-toggle" id="settings-toggle" onclick="toggleSettings()" title="Display settings">⚙</button>
+        </div>
+      </div>
+      <div class="settings-panel" id="settings-panel" style="display:none;">
+        <div class="settings-row">
+          <span class="settings-label">Size</span>
+          <div class="size-controls">
+            <button class="size-btn" onclick="adjustSize(-1)">A−</button>
+            <span class="size-val" id="size-val">100%</span>
+            <button class="size-btn" onclick="adjustSize(1)">A+</button>
+          </div>
+        </div>
+        <div class="settings-row">
+          <span class="settings-label">Font</span>
+          <select class="font-select" id="font-select" onchange="applyFont(this.value)">
+            <option value="system">System UI</option>
+            <option value="georgia">Georgia</option>
+            <option value="helvetica">Helvetica Neue</option>
+            <option value="palatino">Palatino</option>
+          </select>
+        </div>
+        <button class="settings-reset" onclick="resetSettings()">Reset to defaults</button>
+      </div>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-label">Sections</div>
+      <a class="nav-item active" href="#briefing"><span class="dot red"></span>Today</a>
+      <a class="nav-item" href="#week-in-review" id="nav-week-in-review" style="display:none;"><span class="dot" style="background:#a78bfa;"></span>Week In Review</a>
+      <a class="nav-item" href="#week" id="nav-week"><span class="dot indigo"></span>Week Ahead</a>
+      <a class="nav-item" href="#tasks"><span class="dot amber"></span>Tasks <span class="nav-badge" id="task-count">—</span></a>
+      <a class="nav-item" href="#inbox"><span class="dot blue" style="background:var(--blue)"></span>Inbox <span class="nav-badge" id="inbox-count">—</span></a>
+      <a class="nav-item" href="#meetings"><span class="dot"></span>Meeting Intel</a>
+      <a class="nav-item" href="#wins"><span class="dot green"></span>Weekly Wins</a>
+      <a class="nav-item" href="#capture"><span class="dot green"></span>Quick Capture</a>
+    </div>
+
+    <div class="nav-section" style="margin-top:12px;">
+      <div class="nav-label">Projects</div>
+      <a class="nav-item" href="#tasks"><span class="dot red"></span>Iterable Migration</a>
+      <a class="nav-item" href="#tasks"><span class="dot amber"></span>Newsletters</a>
+      <a class="nav-item" href="#tasks"><span class="dot indigo"></span>News Hub</a>
+      <a class="nav-item" href="#tasks"><span class="dot" style="background:var(--blue)"></span>Podcast</a>
+    </div>
+
+    <div class="sidebar-stats">
+      <div class="stat-row"><span class="stat-label">Open tasks</span><span class="stat-val" id="stat-tasks">—</span></div>
+      <div class="stat-row"><span class="stat-label">High priority</span><span class="stat-val" id="stat-high">—</span></div>
+      <div class="stat-row"><span class="stat-label">Unread inbox</span><span class="stat-val" id="stat-inbox">—</span></div>
+      <div class="stat-row"><span class="stat-label">Meetings this week</span><span class="stat-val" id="stat-meetings">—</span></div>
+    </div>
+  </nav>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <!-- URGENT BAR -->
+    <div class="urgent-bar" id="urgent-bar"></div>
+
+    <!-- TODAY -->
+    <div class="section" id="briefing">
+      <div class="section-header">
+        <span class="section-title">Today</span>
+        <span class="section-meta" id="today-date-meta"></span>
+      </div>
+      <div class="today-grid">
+        <div class="card" id="today-calendar">
+          <div class="card-title">Calendar</div>
+        </div>
+        <div class="card" id="today-notes">
+          <div class="card-title">On Your Radar</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- WEEK IN REVIEW -->
+    <div class="section" id="week-in-review" style="display:none;">
+      <div class="section-header">
+        <span class="section-title">Week In Review</span>
+        <span class="section-meta" id="wir-date-meta"></span>
+      </div>
+      <div id="wir-content"></div>
+    </div>
+
+    <!-- WEEKLY WINS -->
+    <div class="section" id="wins">
+      <div class="section-header">
+        <span class="section-title">Weekly Wins</span>
+        <span class="section-meta" id="wins-date-meta"></span>
+      </div>
+      <div class="wins-slack" id="wins-slack">
+        <div class="wins-slack-label">Slack / Email version</div>
+        <div id="wins-slack-body"></div>
+      </div>
+      <div id="wins-grid"></div>
+    </div>
+
+    <!-- WEEK AHEAD -->
+    <div class="section" id="week">
+      <div class="section-header">
+        <span class="section-title">Week Ahead</span>
+        <span class="section-meta">Apr 2 - Apr 8</span>
+      </div>
+      <div id="week-grid"></div>
+    </div>
+
+    <!-- TASKS -->
+    <div class="section" id="tasks">
+      <div class="section-header">
+        <span class="section-title">Tasks</span>
+        <span class="section-meta" id="tasks-meta"></span>
+      </div>
+      <div id="tasks-grid"></div>
+    </div>
+
+    <!-- INBOX -->
+    <div class="section" id="inbox">
+      <div class="section-header">
+        <span class="section-title">Inbox</span>
+        <span class="section-meta">Personal + Work digest</span>
+      </div>
+      <div class="inbox-tabs">
+        <div class="tab active" onclick="switchTab('personal')">Personal</div>
+        <div class="tab" onclick="switchTab('work')">Work</div>
+      </div>
+      <div id="inbox-personal"></div>
+      <div id="inbox-work" style="display:none;"></div>
+    </div>
+
+    <!-- MEETINGS -->
+    <div class="section" id="meetings">
+      <div class="section-header">
+        <span class="section-title">Meeting Intel</span>
+        <span class="section-meta">This week via Granola</span>
+      </div>
+      <div id="meetings-grid"></div>
+    </div>
+
+    <!-- QUICK CAPTURE -->
+    <div class="section" id="capture">
+      <div class="section-header">
+        <span class="section-title">Quick Capture</span>
+        <span class="section-meta">Syncs to Obsidian daily note</span>
+      </div>
+      <textarea class="capture-box" id="capture-input" placeholder="Drop a thought, follow-up, or note here..."></textarea>
+      <div class="capture-footer">
+        <span class="capture-hint" id="capture-hint">Press Cmd+Enter to save</span>
+        <div style="display:flex;gap:8px;">
+          <button class="btn" onclick="clearCapture()">Clear</button>
+          <button class="btn primary" onclick="saveCapture()">Save to daily note</button>
+        </div>
+      </div>
+      <div id="capture-log" style="margin-top:12px;"></div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+const DATA = {
+  "generated_at": "2026-06-24T07:00",
+  "today": "2026-06-24",
+  "urgent": [
+    {
+      "title": "Send Lighthouse retro notes to Maya before 2pm",
+      "severity": "red"
+    },
+    {
+      "title": "Decide whether to renew Heron Analytics by Friday",
+      "severity": "amber"
+    },
+    {
+      "title": "Prep Devon 1:1 with launch-risk framing",
+      "severity": "amber"
+    }
+  ],
+  "tasks": [
+    {
+      "id": "t1",
+      "title": "Finalize onboarding A/B test plan",
+      "project": "Lighthouse Redesign",
+      "due": "2026-06-26",
+      "priority": "high",
+      "status": "open"
+    },
+    {
+      "id": "t2",
+      "title": "Draft Q3 growth roadmap questions for Devon",
+      "project": "Lighthouse Redesign",
+      "due": "2026-06-24",
+      "priority": "high",
+      "status": "open"
+    },
+    {
+      "id": "t3",
+      "title": "Send Heron Analytics renewal decision",
+      "project": "Vendor Renewals",
+      "due": "2026-06-26",
+      "priority": "normal",
+      "status": "open"
+    },
+    {
+      "id": "t4",
+      "title": "Update stakeholder brief with research findings",
+      "project": "Growth Ops",
+      "due": "2026-06-27",
+      "priority": "normal",
+      "status": "open"
+    },
+    {
+      "id": "t5",
+      "title": "Archive completed activation interview notes",
+      "project": "Knowledge Base",
+      "due": null,
+      "priority": "low",
+      "status": "open"
+    }
+  ],
+  "calendar": [
+    {
+      "date": "2026-06-24",
+      "day": "Wednesday",
+      "events": [
+        {
+          "time": "10:00",
+          "title": "1:1 with Devon Price",
+          "event_type": "work",
+          "tag": "work"
+        },
+        {
+          "time": "14:00",
+          "title": "Lighthouse retro with Maya",
+          "event_type": "work",
+          "tag": "external"
+        }
+      ]
+    },
+    {
+      "date": "2026-06-25",
+      "day": "Thursday",
+      "events": [
+        {
+          "time": "11:30",
+          "title": "Priya Shah research sync",
+          "event_type": "work",
+          "tag": "external"
+        }
+      ]
+    },
+    {
+      "date": "2026-06-26",
+      "day": "Friday",
+      "events": [
+        {
+          "time": "09:00",
+          "title": "Heron renewal decision",
+          "event_type": "work",
+          "tag": "work"
+        }
+      ]
+    },
+    {
+      "date": "2026-06-29",
+      "day": "Monday",
+      "events": [
+        {
+          "time": "13:00",
+          "title": "Q3 roadmap review",
+          "event_type": "work",
+          "tag": "work"
+        }
+      ]
+    }
+  ],
+  "emails": [
+    {
+      "sender": "Maya Okafor",
+      "subject": "Need your retro notes before leadership review",
+      "snippet": "Can you send the decisions and risks in separate bullets?",
+      "date": "Jun 24",
+      "source": "work",
+      "is_work": true
+    },
+    {
+      "sender": "Devon Price",
+      "subject": "Tomorrow's roadmap conversation",
+      "snippet": "I want to make sure we're aligned on the rollout path.",
+      "date": "Jun 24",
+      "source": "work",
+      "is_work": true
+    },
+    {
+      "sender": "Heron Analytics",
+      "subject": "Renewal quote expires Friday",
+      "snippet": "Attached is the updated annual agreement.",
+      "date": "Jun 23",
+      "source": "work",
+      "is_work": true
+    }
+  ],
+  "meetings": [
+    {
+      "date": "2026-06-24",
+      "title": "1:1 with Devon Price",
+      "people": "Devon Price",
+      "summary": "Discuss launch risk, ownership, and whether Lighthouse should roll out in phases."
+    },
+    {
+      "date": "2026-06-24",
+      "title": "Lighthouse retro with Maya",
+      "people": "Maya Okafor, Anthony",
+      "summary": "Close open questions from onboarding redesign and turn notes into leadership-ready decisions."
+    },
+    {
+      "date": "2026-06-25",
+      "title": "Research sync with Priya",
+      "people": "Priya Shah",
+      "summary": "Pressure-test activation metrics and research plan."
+    }
+  ],
+  "week_ahead": {
+    "prep_notes": [
+      "Separate Lighthouse launch decision from measurement decision.",
+      "Bring Heron usage trend and replacement-cost estimate.",
+      "Ask Maya what risks should be escalated before Q3 review."
+    ]
+  },
+  "week_in_review": {
+    "enabled": true,
+    "date_range": "Jun 17-Jun 23",
+    "newsletters_sent": [
+      "Published synthetic growth-readout brief"
+    ],
+    "shipped": [
+      "Converted raw meeting notes into linked project pages"
+    ],
+    "key_decisions": [
+      "Keep Lighthouse rollout phased"
+    ],
+    "open_items_carried": [
+      "Heron renewal decision"
+    ]
+  },
+  "wins": {
+    "date_range": "Jun 17-Jun 23",
+    "slack_version": "Shipped a cleaner operating rhythm: meeting prep, open loops, and project context are now visible in one morning brief.",
+    "items": [
+      {
+        "category": "Ops",
+        "text": "Reduced prep time for project meetings",
+        "why": "Relevant context is surfaced automatically."
+      },
+      {
+        "category": "Knowledge",
+        "text": "Linked people, projects, and decisions",
+        "why": "Follow-up no longer depends on memory."
+      }
+    ]
+  }
+};
+
+const PROJ_COLORS = {
+  "Iterable Migration": "var(--red)",
+  "Newsletters": "var(--amber)",
+  "News Hub": "var(--indigo)",
+  "Podcast": "var(--blue)"
+};
+
+const DAY_NAMES = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+const MONTH_NAMES = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const FULL_DAYS = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+
+function fmtDate(s) {
+  const d = new Date(s + "T12:00:00");
+  return `${MONTH_NAMES[d.getMonth()]} ${d.getDate()}`;
+}
+function fmtDateFull(s) {
+  const d = new Date(s + "T12:00:00");
+  return `${FULL_DAYS[d.getDay()]}, ${MONTH_NAMES[d.getMonth()]} ${d.getDate()}`;
+}
+function fmtRange(start, end) {
+  const sd = new Date(start + "T12:00:00");
+  const ed = new Date(end + "T12:00:00");
+  const startText = `${MONTH_NAMES[sd.getMonth()]} ${sd.getDate()}`;
+  const endText = `${MONTH_NAMES[ed.getMonth()]} ${ed.getDate()}`;
+  return `${startText} - ${endText}`;
+}
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+function normalizeList(value) {
+  if (!value) return [];
+  if (Array.isArray(value)) return value;
+  return [value];
+}
+function joinList(items) {
+  if (!items.length) return "";
+  if (items.length === 1) return items[0];
+  if (items.length === 2) return `${items[0]} and ${items[1]}`;
+  return `${items.slice(0, -1).join(", ")}, and ${items[items.length - 1]}`;
+}
+function isWeekendPrepWindow() {
+  const d = new Date(DATA.today + "T12:00:00");
+  const day = d.getDay();
+  return day === 5 || day === 6 || day === 0;
+}
+function buildWeekAheadNarrative(openTasks) {
+  const highPriority = openTasks
+    .filter(t => t.priority === "high")
+    .sort((a, b) => {
+      const aDue = a.due_date || "9999-12-31";
+      const bDue = b.due_date || "9999-12-31";
+      return aDue.localeCompare(bDue);
+    });
+  const taskTitles = highPriority.slice(0, 4).map(t => escapeHtml(t.title));
+  const overdueCount = highPriority.filter(t => daysUntil(t.due_date) < 0).length;
+  const prepNotes = normalizeList(DATA.week_ahead?.prep_notes);
+  const nextMeetings = DATA.calendar
+    .filter(e => e.date > DATA.today && e.event_type === "work")
+    .slice(0, 3)
+    .map(e => `${escapeHtml(e.title)} (${fmtDate(e.date)})`);
+
+  const paragraphs = [];
+  if (taskTitles.length) {
+    const pressure = overdueCount
+      ? `${overdueCount} high-priority item${overdueCount === 1 ? " is" : "s are"} already overdue`
+      : `the highest-risk work is still open`;
+    paragraphs.push(`Before the week starts, clean up the work that will create drag on Monday. ${pressure}, and the first things to knock down are ${joinList(taskTitles)}.`);
+  }
+  if (nextMeetings.length) {
+    paragraphs.push(`The early week is already filling up with ${joinList(nextMeetings)}. Use this window to tighten the talking points, gather missing numbers, and avoid reactive prep once the calendar starts dictating the pace.`);
+  }
+  if (prepNotes.length) {
+    paragraphs.push(`What matters most for next week: ${escapeHtml(prepNotes.slice(0, 3).join(" "))}`);
+  }
+  return paragraphs;
+}
+function daysUntil(s) {
+  if (!s) return null;
+  const today = new Date(DATA.today + "T12:00:00");
+  const due = new Date(s + "T12:00:00");
+  return Math.round((due - today) / 86400000);
+}
+
+function init() {
+  loadDisplayPrefs();
+  const completions = loadTaskCompletions();
+
+  // Header
+  document.getElementById("today-label").textContent = fmtDateFull(DATA.today);
+  document.getElementById("today-date-meta").textContent = fmtDateFull(DATA.today);
+  document.getElementById("updated-label").textContent = "Updated " + DATA.generated_at.replace("T", " ").slice(0, 16);
+
+  // Urgent bar
+  const ub = document.getElementById("urgent-bar");
+  const urgentDismissals = loadUrgentDismissals();
+  DATA.urgent.forEach(u => {
+    const key = hashStr(u.item);
+    const icon = u.level === "HIGH" ? "▲ HIGH" : "● MED";
+    const iconClass = u.level === "HIGH" ? "" : "amber";
+    const isDone = !!urgentDismissals[key];
+    ub.innerHTML += `<div class="urgent-item${isDone ? " done" : ""}" data-urgent-key="${key}"><span class="urgent-check" onclick="toggleUrgentDone('${key}')">${isDone ? "[✓]" : "[ ]"}</span><span class="urgent-icon ${iconClass}">${icon}</span><span class="urgent-text">${escapeHtml(u.item)}</span></div>`;
+  });
+
+  // Today's calendar
+  const tc = document.getElementById("today-calendar");
+  const todayDayObj = DATA.calendar.find(d => d.date === DATA.today);
+  const todayEvents = todayDayObj ? (todayDayObj.events || []) : [];
+  if (todayEvents.length === 0) {
+    tc.innerHTML += `<div class="event-row"><span style="font-size:14px;color:var(--muted);">No events</span></div>`;
+  } else {
+    todayEvents.forEach(e => {
+      const tagClass = e.type === "work" ? "tag-work" : e.type === "external" ? "tag-external" : "tag-personal";
+      tc.innerHTML += `<div class="event-row">
+        <span class="event-time">${escapeHtml(e.time)}</span>
+        <span class="event-title">${escapeHtml(e.title)}</span>
+        <span class="event-tag ${tagClass}">${e.type}</span>
+      </div>`;
+    });
+  }
+
+  // Today's radar
+  const tn = document.getElementById("today-notes");
+  const radarItems = [];
+  const todayTasks = DATA.tasks
+    .filter(t => t.status === "open" && !completions[String(t.id)] && (t.priority === "high" || daysUntil(t.due_date) === 0 || daysUntil(t.due_date) < 0))
+    .slice(0, 4);
+
+  todayTasks.forEach(t => {
+    const due = daysUntil(t.due_date);
+    let label = "Priority";
+    let color = "var(--amber)";
+    if (due < 0) {
+      label = "Overdue";
+      color = "var(--red)";
+    } else if (due === 0) {
+      label = "Today";
+      color = "var(--amber)";
+    } else if (t.priority === "high") {
+      label = "High";
+      color = "var(--red)";
+    }
+    radarItems.push(`
+      <div class="event-row">
+        <span style="font-size:14px;color:${color};font-weight:600;min-width:56px;">${label}</span>
+        <span style="font-size:14px;color:var(--text);" title="${escapeHtml(t.notes || "")}">${escapeHtml(t.title)}</span>
+      </div>
+    `);
+  });
+
+  const rsvpEmail = DATA.emails.find(e => (e.subject || "").includes("CCO Content Leadership Meeting"));
+  if (rsvpEmail) {
+    radarItems.push(`
+      <div class="event-row">
+        <span style="font-size:14px;color:var(--blue);font-weight:600;min-width:56px;">Inbox</span>
+        <span style="font-size:14px;color:var(--text);">RSVP needed for Apr 6 CCO Content Leadership meeting</span>
+      </div>
+    `);
+  }
+
+  if (radarItems.length === 0) {
+    radarItems.push(`<div class="event-row" style="border:none;"><span style="font-size:14px;color:var(--muted);">No urgent items pulled in for today</span></div>`);
+  } else {
+    const last = radarItems.length - 1;
+    radarItems[last] = radarItems[last].replace('class="event-row"', 'class="event-row" style="border:none;"');
+  }
+  tn.innerHTML += radarItems.join("");
+
+  // Weekly Wins
+  if (DATA.wins && DATA.wins.items) {
+    document.getElementById("wins-date-meta").textContent = DATA.wins.date_range || "";
+    document.getElementById("wins-slack-body").textContent = DATA.wins.slack_version || "";
+    const winsGrid = document.getElementById("wins-grid");
+    DATA.wins.items.forEach(w => {
+      winsGrid.innerHTML += `<div class="win-row">
+        <div class="win-category">${escapeHtml(w.category)}</div>
+        <div class="win-body">
+          <div class="win-text">${escapeHtml(w.win)}</div>
+          ${w.why ? `<div class="win-why">${escapeHtml(w.why)}</div>` : ""}
+        </div>
+      </div>`;
+    });
+  }
+
+  // Week ahead — always visible
+  {
+    const wg = document.getElementById("week-grid");
+    const openTasks = DATA.tasks.filter(t => t.status === "open" && !completions[String(t.id)]);
+    const weekDays = DATA.calendar.filter(d => d.date > DATA.today);
+    const byDay = {};
+    weekDays.forEach(d => { byDay[d.date] = d.events || []; });
+    const sortedDays = Object.keys(byDay).sort();
+    if (sortedDays.length > 0) {
+      document.querySelector("#week .section-meta").textContent = fmtRange(sortedDays[0], sortedDays[sortedDays.length - 1]);
+    }
+    if (isWeekendPrepWindow()) {
+      const narrative = buildWeekAheadNarrative(openTasks);
+      if (narrative.length) {
+        let html = `<div class="week-narrative">`;
+        narrative.forEach(p => {
+          html += `<p>${p}</p>`;
+        });
+        html += `</div>`;
+        wg.insertAdjacentHTML("beforebegin", html);
+      }
+    } else if (DATA.week_ahead && DATA.week_ahead.prep_notes && DATA.week_ahead.prep_notes.length) {
+      let prepHtml = `<div style="margin-bottom:12px;">`;
+      DATA.week_ahead.prep_notes.forEach(note => {
+        prepHtml += `<div style="font-size:13px;color:var(--amber);padding:3px 0;">→ ${escapeHtml(note)}</div>`;
+      });
+      prepHtml += `</div>`;
+      wg.insertAdjacentHTML("beforebegin", prepHtml);
+    }
+    sortedDays.forEach(day => {
+      const d = new Date(day + "T12:00:00");
+      let html = `<div class="week-day"><div class="week-day-label"><span class="day-name">${DAY_NAMES[d.getDay()]}</span><span class="day-date">${MONTH_NAMES[d.getMonth()]} ${d.getDate()}</span></div>`;
+      byDay[day].forEach(e => {
+        html += `<div class="week-event"><span class="week-event-time">${escapeHtml(e.time)}</span><span class="week-event-title">${escapeHtml(e.title)}${e.organizer ? ' <span style="color:var(--muted);font-size:13px;">w/ ' + escapeHtml(e.organizer) + '</span>' : ''}</span></div>`;
+      });
+      html += `</div>`;
+      wg.innerHTML += html;
+    });
+  }
+
+  // Week In Review — show Fri through the following Tue (enabled flag set by scheduled task)
+  const wirSection = document.getElementById("week-in-review");
+  const wirNavEl = document.getElementById("nav-week-in-review");
+  if (DATA.week_in_review && DATA.week_in_review.enabled) {
+    wirSection.style.display = "";
+    if (wirNavEl) wirNavEl.style.display = "";
+    document.getElementById("wir-date-meta").textContent = DATA.week_in_review.date_range || "";
+    const wir = document.getElementById("wir-content");
+    if (DATA.week_in_review.newsletters_sent && DATA.week_in_review.newsletters_sent.length) {
+      let html = `<div class="wir-block"><div class="wir-block-label">Newsletters Sent</div>`;
+      DATA.week_in_review.newsletters_sent.forEach(n => {
+        const nlParts = [escapeHtml(n.name), escapeHtml(n.send_date), n.open_rate ? escapeHtml(n.open_rate) : null, n.notes ? escapeHtml(n.notes) : null].filter(Boolean);
+        html += `<div class="wir-item"><span class="wir-item-text">${nlParts.join(' · ')}</span></div>`;
+      });
+      wir.innerHTML += html + `</div>`;
+    }
+    if (DATA.week_in_review.shipped && DATA.week_in_review.shipped.length) {
+      let html = `<div class="wir-block"><div class="wir-block-label">Shipped</div>`;
+      DATA.week_in_review.shipped.forEach(s => {
+        html += `<div class="wir-item"><span class="wir-item-text">${escapeHtml(s)}</span></div>`;
+      });
+      wir.innerHTML += html + `</div>`;
+    }
+    if (DATA.week_in_review.key_decisions && DATA.week_in_review.key_decisions.length) {
+      let html = `<div class="wir-block"><div class="wir-block-label">Key Decisions</div>`;
+      DATA.week_in_review.key_decisions.forEach(dec => {
+        html += `<div class="wir-item"><span class="wir-item-text">${escapeHtml(dec)}</span></div>`;
+      });
+      wir.innerHTML += html + `</div>`;
+    }
+    if (DATA.week_in_review.open_items_carried && DATA.week_in_review.open_items_carried.length) {
+      let html = `<div class="wir-block"><div class="wir-block-label">Carried Forward</div>`;
+      DATA.week_in_review.open_items_carried.forEach(item => {
+        html += `<div class="wir-item"><span class="wir-item-text">${escapeHtml(item)}</span></div>`;
+      });
+      wir.innerHTML += html + `</div>`;
+    }
+  }
+
+  // Tasks
+  const tg = document.getElementById("tasks-grid");
+  const openTasks = DATA.tasks.filter(t => t.status === "open");
+  const unchecked = openTasks.filter(t => !completions[String(t.id)]);
+  document.getElementById("tasks-meta").textContent = `${unchecked.length} open`;
+  document.getElementById("task-count").textContent = unchecked.length;
+  document.getElementById("stat-tasks").textContent = unchecked.length;
+  document.getElementById("stat-high").textContent = unchecked.filter(t => t.priority === "high").length;
+
+  const byProject = {};
+  openTasks.forEach(t => {
+    const key = t.project || "_general";
+    (byProject[key] = byProject[key] || []).push(t);
+  });
+  const projOrder = ["Iterable Migration", "Newsletters", "News Hub", "Podcast", "_general"];
+  const projLabels = { "_general": "General" };
+  projOrder.forEach(proj => {
+    if (!byProject[proj]) return;
+    const color = PROJ_COLORS[proj] || "var(--muted)";
+    const label = projLabels[proj] || proj;
+    let html = `<div class="project-group"><div class="project-label"><span class="proj-dot" style="background:${color}"></span>${label}</div>`;
+    byProject[proj].forEach(t => {
+      const days = daysUntil(t.due_date);
+      let dueClass = "", dueLabel = "";
+      if (t.due_date) {
+        if (days < 0) { dueClass = "overdue"; dueLabel = `${Math.abs(days)}d overdue`; }
+        else if (days <= 3) { dueClass = "soon"; dueLabel = days === 0 ? "today" : `${days}d`; }
+        else { dueLabel = fmtDate(t.due_date); }
+      }
+      const isDone = !!completions[String(t.id)];
+      html += `<div class="task-row${isDone ? " task-done" : ""}" data-task-id="${t.id}">
+        <span class="priority-dot p-${t.priority}"></span>
+        <span class="task-check" onclick="toggleTaskDone(${t.id})">${isDone ? "[✓]" : "[ ]"}</span>
+        <span class="task-title" title="${escapeHtml(t.notes || '')}">${escapeHtml(t.title)}</span>
+        ${t.due_date ? `<span class="task-due ${dueClass}">${dueLabel}</span>` : ""}
+      </div>`;
+    });
+    html += `</div>`;
+    tg.innerHTML += html;
+  });
+
+  // Inbox
+  const personalEl = document.getElementById("inbox-personal");
+  const workEl = document.getElementById("inbox-work");
+  const personal = DATA.emails.filter(e => e.source === "personal" || !e.is_work);
+  const work = DATA.emails.filter(e => e.source === "work" || e.is_work);
+  document.getElementById("inbox-count").textContent = DATA.emails.length;
+  document.getElementById("stat-inbox").textContent = DATA.emails.length;
+
+  personal.forEach(e => {
+    personalEl.innerHTML += `<div class="email-row">
+      <div class="email-body">
+        <div style="display:flex;gap:8px;align-items:baseline;">
+          <span class="email-sender">${e.sender}</span>
+          <span class="email-subject">${e.subject}</span>
+          <span class="email-date">${fmtDate(e.date)}</span>
+        </div>
+        <span class="email-snippet">${e.snippet}</span>
+      </div>
+    </div>`;
+  });
+
+  if (work.length === 0) {
+    workEl.innerHTML = `<div style="padding:20px;text-align:center;color:var(--muted);font-size:14px;">No work messages in the current digest.</div>`;
+  } else {
+    work.forEach(e => {
+      workEl.innerHTML += `<div class="email-row">
+        <div class="email-body">
+          <div style="display:flex;gap:8px;align-items:baseline;">
+            <span class="email-sender">${e.sender}</span>
+            <span class="email-subject">${e.subject}</span>
+            <span class="email-date">${fmtDate(e.date)}</span>
+          </div>
+          <span class="email-snippet">${e.snippet}</span>
+        </div>
+      </div>`;
+    });
+  }
+
+  // Meetings
+  const mg = document.getElementById("meetings-grid");
+  document.getElementById("stat-meetings").textContent = DATA.meetings.length;
+  DATA.meetings.forEach(m => {
+    const participants = normalizeList(m.participants).join(", ");
+    const keyDecisions = normalizeList(m.key_decisions).slice(0, 2).join(" | ");
+    const actionItems = normalizeList(m.action_items).slice(0, 2).join(" | ");
+    mg.innerHTML += `<div class="meeting-row">
+      <div class="meeting-date-col">${fmtDate(m.date)}</div>
+      <div class="meeting-body">
+        <div class="meeting-title">${escapeHtml(m.title)}</div>
+        <div class="meeting-people">${escapeHtml(participants)}</div>
+        ${keyDecisions ? `<div style="font-size:13px;color:var(--muted2);margin-top:3px;">${escapeHtml(keyDecisions)}</div>` : ""}
+        ${actionItems ? `<div style="font-size:13px;color:var(--amber);margin-top:3px;">→ ${escapeHtml(actionItems)}</div>` : ""}
+      </div>
+    </div>`;
+  });
+
+  // Quick capture — load saved notes
+  const saved = JSON.parse(sessionStorage.getItem("capture_log") || "[]");
+  renderCaptureLog(saved);
+
+  // Keyboard shortcut
+  document.getElementById("capture-input").addEventListener("keydown", e => {
+    if ((e.metaKey || e.ctrlKey) && e.key === "Enter") { e.preventDefault(); saveCapture(); }
+  });
+
+  // Smooth nav
+  document.querySelectorAll("a.nav-item").forEach(a => {
+    a.addEventListener("click", e => {
+      e.preventDefault();
+      document.querySelectorAll("a.nav-item").forEach(x => x.classList.remove("active"));
+      a.classList.add("active");
+      const target = document.querySelector(a.getAttribute("href"));
+      if (target) target.scrollIntoView({ behavior: "smooth" });
+    });
+  });
+}
+
+function switchTab(tab) {
+  document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+  event.target.classList.add("active");
+  document.getElementById("inbox-personal").style.display = tab === "personal" ? "" : "none";
+  document.getElementById("inbox-work").style.display = tab === "work" ? "" : "none";
+}
+
+function saveCapture() {
+  const input = document.getElementById("capture-input");
+  const text = input.value.trim();
+  if (!text) return;
+  const log = JSON.parse(sessionStorage.getItem("capture_log") || "[]");
+  const entry = { text, ts: new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) };
+  log.unshift(entry);
+  sessionStorage.setItem("capture_log", JSON.stringify(log));
+  renderCaptureLog(log);
+  input.value = "";
+  document.getElementById("capture-hint").textContent = "Saved — tell your Chief of Staff to sync to Obsidian";
+}
+
+function clearCapture() {
+  document.getElementById("capture-input").value = "";
+  document.getElementById("capture-hint").textContent = "Press Cmd+Enter to save";
+}
+
+function renderCaptureLog(log) {
+  const el = document.getElementById("capture-log");
+  if (log.length === 0) { el.innerHTML = ""; return; }
+  el.innerHTML = log.map(e => `
+    <div style="display:flex;gap:10px;padding:6px 8px;background:var(--surface);border:1px solid var(--border);border-radius:3px;margin-bottom:2px;">
+      <span style="font-size:12px;font-family:var(--mono);color:var(--muted);flex-shrink:0;margin-top:1px;">${e.ts}</span>
+      <span style="font-size:14px;color:var(--text);">${e.text}</span>
+    </div>
+  `).join("");
+}
+
+// --- Task completions ---
+function loadTaskCompletions() {
+  try {
+    const raw = JSON.parse(localStorage.getItem("task_completions") || "{}");
+    const now = Date.now();
+    const pruned = {};
+    for (const [id, data] of Object.entries(raw)) {
+      if (now - data.ts < 86400000) pruned[id] = data; // keep if < 24h
+    }
+    localStorage.setItem("task_completions", JSON.stringify(pruned));
+    return pruned;
+  } catch(e) { return {}; }
+}
+
+function toggleTaskDone(taskId) {
+  const completions = loadTaskCompletions();
+  const key = String(taskId);
+  const row = document.querySelector(`[data-task-id="${key}"]`);
+  const check = row ? row.querySelector(".task-check") : null;
+  if (completions[key]) {
+    delete completions[key];
+    if (row) row.classList.remove("task-done");
+    if (check) check.textContent = "[ ]";
+  } else {
+    completions[key] = { ts: Date.now() };
+    if (row) row.classList.add("task-done");
+    if (check) check.textContent = "[✓]";
+  }
+  localStorage.setItem("task_completions", JSON.stringify(completions));
+}
+
+// --- Urgent bar dismissals ---
+function hashStr(s) {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) {
+    h = (h * 31 + s.charCodeAt(i)) | 0;
+  }
+  return String(h);
+}
+
+function loadUrgentDismissals() {
+  try {
+    return JSON.parse(localStorage.getItem("urgent_dismissals") || "{}");
+  } catch(e) { return {}; }
+}
+
+function toggleUrgentDone(key) {
+  const dismissals = loadUrgentDismissals();
+  const row = document.querySelector(`[data-urgent-key="${key}"]`);
+  const check = row ? row.querySelector(".urgent-check") : null;
+  if (dismissals[key]) {
+    delete dismissals[key];
+    if (row) row.classList.remove("done");
+    if (check) check.textContent = "[ ]";
+  } else {
+    dismissals[key] = { ts: Date.now() };
+    if (row) row.classList.add("done");
+    if (check) check.textContent = "[✓]";
+  }
+  localStorage.setItem("urgent_dismissals", JSON.stringify(dismissals));
+}
+
+// --- Display settings ---
+const FONTS = {
+  system:   "-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif",
+  georgia:  "Georgia, 'Times New Roman', serif",
+  helvetica:"'Helvetica Neue', Helvetica, Arial, sans-serif",
+  palatino: "'Palatino Linotype', Palatino, 'Book Antiqua', serif"
+};
+const SIZE_STEPS = [80, 90, 100, 110, 120, 130, 140, 155];
+let currentSizeIdx = 2;
+let currentFont = "system";
+
+function toggleSettings() {
+  const p = document.getElementById("settings-panel");
+  p.style.display = p.style.display === "none" ? "" : "none";
+}
+
+function adjustSize(dir) {
+  currentSizeIdx = Math.max(0, Math.min(SIZE_STEPS.length - 1, currentSizeIdx + dir));
+  applySize();
+  saveDisplayPrefs();
+}
+
+function applySize() {
+  document.body.style.zoom = SIZE_STEPS[currentSizeIdx] / 100;
+  document.getElementById("size-val").textContent = SIZE_STEPS[currentSizeIdx] + "%";
+}
+
+function applyFont(key) {
+  currentFont = key;
+  document.documentElement.style.setProperty("--sans", FONTS[key]);
+  saveDisplayPrefs();
+}
+
+function resetSettings() {
+  currentSizeIdx = 2;
+  currentFont = "system";
+  applySize();
+  applyFont("system");
+  document.getElementById("font-select").value = "system";
+  localStorage.removeItem("display_prefs");
+}
+
+function saveDisplayPrefs() {
+  localStorage.setItem("display_prefs", JSON.stringify({ sizeIdx: currentSizeIdx, font: currentFont }));
+}
+
+function loadDisplayPrefs() {
+  try {
+    const saved = JSON.parse(localStorage.getItem("display_prefs") || "{}");
+    if (saved.sizeIdx !== undefined) currentSizeIdx = saved.sizeIdx;
+    if (saved.font) currentFont = saved.font;
+    applySize();
+    applyFont(currentFont);
+    const sel = document.getElementById("font-select");
+    if (sel) sel.value = currentFont;
+  } catch(e) {}
+}
+
+function toggleTheme() {
+  const html = document.documentElement;
+  const isLight = html.getAttribute("data-theme") === "light";
+  html.setAttribute("data-theme", isLight ? "" : "light");
+  document.getElementById("theme-toggle").textContent = isLight ? "☀" : "🌙";
+}
+
+init();
+</script>
+</body>
+</html>

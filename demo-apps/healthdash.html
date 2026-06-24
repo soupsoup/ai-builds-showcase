@@ -1,0 +1,2807 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>HealthDash Demo — Week of Apr 12–18, 2026</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --bg: #f4f6f9;
+      --card: #ffffff;
+      --text: #1a1a2e;
+      --muted: #6b7280;
+      --border: #e5e7eb;
+      --accent-blue: #3b82f6;
+      --accent-green: #10b981;
+      --accent-orange: #f59e0b;
+      --accent-red: #ef4444;
+      --accent-purple: #8b5cf6;
+      --accent-pink: #ec4899;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    /* HEADER */
+    header {
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 60%, #0f3460 100%);
+      color: white;
+      padding: 40px 32px 32px;
+    }
+    header h1 { font-size: 28px; font-weight: 700; letter-spacing: -0.5px; }
+    header p { color: rgba(255,255,255,0.6); font-size: 14px; margin-top: 4px; }
+    .header-meta {
+      display: flex;
+      gap: 24px;
+      margin-top: 24px;
+      flex-wrap: wrap;
+    }
+    .header-stat {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 12px;
+      padding: 14px 20px;
+      min-width: 130px;
+    }
+    .header-stat .label { font-size: 11px; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 0.8px; }
+    .header-stat .value { font-size: 24px; font-weight: 700; margin-top: 2px; }
+    .header-stat .sub { font-size: 12px; color: rgba(255,255,255,0.5); margin-top: 1px; }
+    .green { color: #34d399; }
+    .yellow { color: #fbbf24; }
+    .red { color: #f87171; }
+
+    /* LAYOUT */
+    main { padding: 32px; max-width: 1300px; margin: 0 auto; }
+    .section-title {
+      font-size: 13px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--muted);
+      margin: 36px 0 16px;
+    }
+    .grid { display: grid; gap: 20px; }
+    .grid-2 { grid-template-columns: repeat(2, 1fr); }
+    .grid-3 { grid-template-columns: repeat(3, 1fr); }
+    .grid-4 { grid-template-columns: repeat(4, 1fr); }
+    @media (max-width: 900px) {
+      .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+    }
+
+    /* CARDS */
+    .card {
+      background: var(--card);
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      padding: 24px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    }
+    .card h3 {
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 18px;
+      color: var(--text);
+    }
+    .card h3 span { font-size: 12px; font-weight: 400; color: var(--muted); margin-left: 6px; }
+    .chart-wrap { position: relative; height: 220px; }
+    .chart-wrap-lg { position: relative; height: 280px; }
+
+    /* STAT CARDS */
+    .stat-card {
+      background: var(--card);
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      padding: 20px 24px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    }
+    .stat-card .sc-label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.6px; font-weight: 500; }
+    .stat-card .sc-value { font-size: 30px; font-weight: 700; margin: 6px 0 2px; color: var(--text); }
+    .stat-card .sc-sub { font-size: 13px; color: var(--muted); }
+    .stat-card .sc-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 99px;
+      font-size: 11px;
+      font-weight: 600;
+      margin-left: 6px;
+    }
+    .badge-green { background: #d1fae5; color: #059669; }
+    .badge-yellow { background: #fef3c7; color: #d97706; }
+    .badge-red { background: #fee2e2; color: #dc2626; }
+
+    /* WORKOUT TABLE */
+    .workout-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    .workout-table th {
+      text-align: left;
+      padding: 8px 12px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: var(--muted);
+      border-bottom: 1px solid var(--border);
+    }
+    .workout-table td {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text);
+    }
+    .workout-table tr:last-child td { border-bottom: none; }
+    .effort-pill {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 99px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .effort-hard { background: #fee2e2; color: #dc2626; }
+    .effort-moderate { background: #fef3c7; color: #d97706; }
+    .effort-easy { background: #d1fae5; color: #059669; }
+
+    /* MEAL LOG TABLE */
+    .meal-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .meal-table th {
+      text-align: left;
+      padding: 7px 10px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--muted);
+      border-bottom: 1px solid var(--border);
+    }
+    .meal-table td {
+      padding: 9px 10px;
+      border-bottom: 1px solid #f3f4f6;
+      vertical-align: top;
+    }
+    .meal-table tr:last-child td { border-bottom: none; }
+    .meal-pill {
+      display: inline-block;
+      padding: 1px 8px;
+      border-radius: 99px;
+      font-size: 10px;
+      font-weight: 600;
+    }
+    .meal-breakfast { background: #fef3c7; color: #b45309; }
+    .meal-lunch { background: #dbeafe; color: #1d4ed8; }
+    .meal-dinner { background: #ede9fe; color: #6d28d9; }
+    .meal-snack { background: #d1fae5; color: #047857; }
+
+    /* BP READINGS */
+    .bp-reading {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .bp-reading:last-child { border-bottom: none; }
+    .bp-date { font-size: 12px; color: var(--muted); width: 90px; }
+    .bp-nums { font-size: 18px; font-weight: 700; }
+    .bp-nums span { font-size: 13px; font-weight: 400; color: var(--muted); }
+    .bp-pulse { font-size: 12px; color: var(--muted); }
+    .bp-status {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 99px;
+      text-transform: uppercase;
+    }
+    .bp-stage2 { background: #fee2e2; color: #dc2626; }
+    .bp-stage1 { background: #fef3c7; color: #d97706; }
+    .bp-elevated { background: #fef3c7; color: #d97706; }
+    .bp-normal { background: #d1fae5; color: #059669; }
+
+    /* MACRO BAR */
+    .macro-bar { display: flex; height: 8px; border-radius: 99px; overflow: hidden; margin: 8px 0 4px; gap: 2px; }
+    .macro-bar div { border-radius: 3px; }
+    .macro-labels { display: flex; gap: 14px; font-size: 11px; color: var(--muted); }
+    .macro-dot { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 4px; }
+
+    /* MACRO TARGET TRACKER */
+    .target-tracker { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; }
+    @media (max-width: 700px) { .target-tracker { grid-template-columns: 1fr; } }
+    .target-row { display: flex; flex-direction: column; gap: 6px; }
+    .target-label { display: flex; justify-content: space-between; align-items: baseline; }
+    .target-name { font-size: 14px; font-weight: 600; color: var(--text); }
+    .target-nums { font-size: 12px; color: var(--muted); }
+    .target-bar-wrap { background: #f3f4f6; border-radius: 99px; height: 12px; overflow: hidden; }
+    .target-bar { height: 100%; border-radius: 99px; transition: width 0.5s ease; }
+    .target-status { font-size: 11px; font-weight: 600; margin-top: 2px; }
+    .status-good { color: #10b981; }
+    .status-warn { color: #f59e0b; }
+    .status-over { color: #ef4444; }
+
+    /* ADVICE SECTION */
+    .advice-section {
+      background: linear-gradient(135deg, #1a1a2e 0%, #0f3460 100%);
+      border-radius: 20px;
+      padding: 36px;
+      color: white;
+      margin-top: 8px;
+    }
+    .advice-section h2 { font-size: 22px; font-weight: 700; margin-bottom: 6px; }
+    .advice-section .week-label { color: rgba(255,255,255,0.5); font-size: 13px; margin-bottom: 28px; }
+    .advice-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+    @media (max-width: 700px) { .advice-grid { grid-template-columns: 1fr; } }
+    .advice-card {
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 14px;
+      padding: 20px 22px;
+    }
+    .advice-card .ac-icon { font-size: 24px; margin-bottom: 10px; }
+    .advice-card .ac-title { font-size: 14px; font-weight: 700; margin-bottom: 8px; }
+    .advice-card .ac-body { font-size: 13px; color: rgba(255,255,255,0.7); line-height: 1.65; }
+    .advice-card .ac-body strong { color: rgba(255,255,255,0.95); }
+    .advice-card ul { list-style: none; padding: 0; }
+    .advice-card ul li {
+      font-size: 13px;
+      color: rgba(255,255,255,0.75);
+      padding: 4px 0;
+      padding-left: 16px;
+      position: relative;
+    }
+    .advice-card ul li::before {
+      content: '→';
+      position: absolute;
+      left: 0;
+      color: rgba(255,255,255,0.35);
+    }
+    .narrative {
+      background: rgba(255,255,255,0.04);
+      border-left: 3px solid rgba(255,255,255,0.2);
+      border-radius: 0 10px 10px 0;
+      padding: 18px 22px;
+      margin-bottom: 24px;
+      font-size: 14px;
+      color: rgba(255,255,255,0.8);
+      line-height: 1.75;
+    }
+
+    /* MEAL PLAN */
+    .plan-header {
+      background: linear-gradient(135deg, #1a1a2e 0%, #0f3460 100%);
+      padding: 20px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: white;
+    }
+    .plan-header h3 { color: white; }
+    .clear-btn {
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.2);
+      color: rgba(255,255,255,0.7);
+      padding: 6px 14px;
+      border-radius: 8px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .clear-btn:hover { background: rgba(255,255,255,0.18); }
+
+    .plan-days { padding: 8px 0; }
+    .plan-day {
+      border-bottom: 1px solid var(--border);
+    }
+    .plan-day:last-child { border-bottom: none; }
+    .plan-day-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 24px;
+      cursor: pointer;
+      background: #fafafa;
+      border-bottom: 1px solid var(--border);
+    }
+    .plan-day-header .day-label {
+      font-weight: 700;
+      font-size: 14px;
+      min-width: 120px;
+    }
+    .plan-day-header .day-stats {
+      font-size: 12px;
+      color: var(--muted);
+      display: flex;
+      gap: 16px;
+    }
+    .plan-day-header .day-progress {
+      margin-left: auto;
+      font-size: 11px;
+      color: var(--muted);
+    }
+    .day-meals { padding: 6px 0; }
+    .meal-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      padding: 10px 24px;
+      transition: background 0.1s;
+      border-bottom: 1px solid #f9fafb;
+    }
+    .meal-row:last-child { border-bottom: none; }
+    .meal-row:hover { background: #f9fafb; }
+    .meal-row input[type="checkbox"] {
+      width: 17px;
+      height: 17px;
+      margin-top: 2px;
+      accent-color: #10b981;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .meal-row.checked .meal-name {
+      text-decoration: line-through;
+      color: var(--muted);
+    }
+    .meal-info { flex: 1; }
+    .meal-name { font-size: 14px; font-weight: 500; color: var(--text); }
+    .meal-meta { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    .meal-macros {
+      font-size: 11px;
+      color: var(--muted);
+      text-align: right;
+      white-space: nowrap;
+    }
+    .macro-chip {
+      display: inline-block;
+      padding: 1px 7px;
+      border-radius: 99px;
+      font-size: 10px;
+      font-weight: 600;
+      margin-left: 4px;
+    }
+    .chip-p { background: #dbeafe; color: #1d4ed8; }
+    .chip-c { background: #fef3c7; color: #b45309; }
+    .chip-f { background: #fce7f3; color: #be185d; }
+
+    /* SHOPPING LIST */
+    .shop-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0;
+    }
+    @media (max-width: 800px) { .shop-grid { grid-template-columns: 1fr 1fr; } }
+    @media (max-width: 500px) { .shop-grid { grid-template-columns: 1fr; } }
+    .shop-cat {
+      padding: 20px 24px;
+      border-right: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+    .shop-cat:nth-child(3n) { border-right: none; }
+    .shop-cat-title {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+    .shop-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 5px 0;
+      cursor: pointer;
+    }
+    .shop-item input[type="checkbox"] {
+      width: 15px;
+      height: 15px;
+      accent-color: #10b981;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .shop-item label {
+      font-size: 13px;
+      color: var(--text);
+      cursor: pointer;
+      line-height: 1.4;
+    }
+    .shop-item.checked label {
+      text-decoration: line-through;
+      color: var(--muted);
+    }
+
+    /* FOOTER */
+    footer {
+      text-align: center;
+      padding: 32px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .note { font-size: 11px; color: var(--muted); margin-top: 8px; font-style: italic; }
+
+    /* TABLE SCROLL WRAPPER */
+    .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+    /* SERVER URL PILL */
+    .server-config {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.14);
+      border-radius: 8px;
+      padding: 6px 12px;
+      margin-top: 8px;
+    }
+    .server-config label { font-size: 11px; color: rgba(255,255,255,0.5); white-space: nowrap; }
+    .server-config input {
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.18);
+      border-radius: 6px;
+      color: rgba(255,255,255,0.85);
+      font-size: 12px;
+      padding: 3px 8px;
+      width: 220px;
+    }
+    .server-config input:focus { outline: none; border-color: rgba(255,255,255,0.4); }
+
+    /* MOBILE RESPONSIVE */
+    @media (max-width: 768px) {
+      header { padding: 20px 16px 16px; }
+      header h1 { font-size: 20px; }
+      header > p { font-size: 12px; }
+      .header-meta { gap: 10px; margin-top: 16px; }
+      .header-stat { min-width: unset; flex: 1 1 120px; padding: 10px 14px; }
+      .header-stat .value { font-size: 20px; }
+      .header-stat .sub { font-size: 10px; }
+      main { padding: 14px; }
+      .section-title { margin: 20px 0 10px; }
+      .card { padding: 14px; }
+      .card h3 { font-size: 13px; margin-bottom: 12px; }
+      .chart-wrap { height: 170px; }
+      .chart-wrap-lg { height: 200px; }
+      .advice-section { padding: 20px 14px; border-radius: 14px; }
+      .advice-section h2 { font-size: 17px; }
+      .plan-day-header { padding: 10px 14px; }
+      .meal-row { padding: 8px 14px; gap: 10px; }
+      .shop-cat { padding: 14px; }
+      .server-config { flex-wrap: wrap; }
+      .server-config input { width: 100%; }
+      .stat-card .sc-value { font-size: 24px; }
+    }
+    @media (max-width: 480px) {
+      header h1 { font-size: 17px; }
+      .header-stat { flex: 1 1 100px; }
+      .header-stat .value { font-size: 17px; }
+    }
+
+    /* TAB NAV */
+    .tab-nav {
+      display: flex;
+      gap: 4px;
+      padding: 16px 32px 0;
+      background: var(--bg);
+      border-bottom: 2px solid var(--border);
+      max-width: 1300px;
+      margin: 0 auto;
+    }
+    @media (max-width: 768px) { .tab-nav { padding: 12px 14px 0; } }
+    .tab-btn {
+      padding: 10px 22px;
+      border: none;
+      background: transparent;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--muted);
+      cursor: pointer;
+      border-radius: 8px 8px 0 0;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -2px;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    .tab-btn:hover { color: var(--text); }
+    .tab-btn.active {
+      color: var(--accent-blue);
+      border-bottom-color: var(--accent-blue);
+      background: var(--card);
+    }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>HealthDash Demo</h1>
+  <p id="dashboardSubtitle">May 4 – 10, 2026 · Data from Notion Health Tracking · Updated May 4</p>
+  <div style="display:flex; justify-content:flex-end; margin-bottom:12px;">
+    <button id="refreshBtn" onclick="refreshData()" style="
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.25);
+      color: white;
+      padding: 9px 20px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: background 0.15s;
+    " onmouseover="this.style.background='rgba(255,255,255,0.2)'"
+       onmouseout="this.style.background='rgba(255,255,255,0.12)'">
+      <span id="refreshIcon">↻</span>
+      <span id="refreshLabel">Refresh Data</span>
+    </button>
+  </div>
+  <div id="refreshStatus" style="display:none; font-size:12px; color:rgba(255,255,255,0.5); text-align:right; margin-bottom:8px;"></div>
+  <div class="server-config">
+    <label>Server URL:</label>
+    <input id="serverUrl" type="text" placeholder="http://localhost:8765" title="Set to your local IP (e.g. http://192.168.1.x:8765) or ngrok URL for remote access" />
+    <button onclick="saveServerUrl()" style="background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);color:white;padding:3px 10px;border-radius:6px;font-size:11px;cursor:pointer;">Save</button>
+  </div>
+
+  <div class="header-meta">
+    <div class="header-stat">
+      <div class="label">Cardio Sessions</div>
+      <div class="value green">7</div>
+      <div class="sub">This week (Apr 19–25)</div>
+    </div>
+    <div class="header-stat">
+      <div class="label">Total Distance</div>
+      <div class="value green">11.22 mi</div>
+      <div class="sub">This week</div>
+    </div>
+    <div class="header-stat">
+      <div class="label">Calories Burned</div>
+      <div class="value green">1,384</div>
+      <div class="sub">Active cal this week</div>
+    </div>
+    <div class="header-stat">
+      <div class="label">Strength Sessions</div>
+      <div class="value green">3</div>
+      <div class="sub">Push · Pull · Legs ✓</div>
+    </div>
+    <div class="header-stat">
+      <div class="label">Last BP Reading</div>
+      <div class="value red">149/94</div>
+      <div class="sub">May 4 (Stage 2)</div>
+    </div>
+    <div class="header-stat">
+      <div class="label">Protein</div>
+      <div class="value green" id="statProtein">61g</div>
+      <div class="sub" id="statProteinSub">Apr 22 · target 175g</div>
+    </div>
+    <div class="header-stat">
+      <div class="label">Carbs</div>
+      <div class="value" style="color:#f59e0b;" id="statCarbs">54g</div>
+      <div class="sub" id="statCarbsSub">Apr 22 · target 280g</div>
+    </div>
+    <div class="header-stat">
+      <div class="label">Fat</div>
+      <div class="value" style="color:#ec4899;" id="statFat">30g</div>
+      <div class="sub" id="statFatSub">Apr 22 · target 75g</div>
+    </div>
+  </div>
+</header>
+
+<!-- TAB NAV -->
+<div class="tab-nav">
+  <button class="tab-btn active" data-tab="week" onclick="switchTab('week')">📅 This Week</button>
+  <button class="tab-btn" data-tab="history" onclick="switchTab('history')">📊 History</button>
+  <button class="tab-btn" data-tab="mealplan" onclick="switchTab('mealplan')">🥗 Meal Plan</button>
+</div>
+
+<main>
+<div id="tab-week" class="tab-panel active">
+
+  <!-- CARDIO -->
+  <div class="section-title">Cardio — Run / Walk Log</div>
+  <div class="grid grid-2">
+
+    <div class="card">
+      <h3>Distance by Session <span>miles</span></h3>
+      <div class="chart-wrap">
+        <canvas id="distanceChart"></canvas>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Heart Rate & Calories Burned</h3>
+      <div class="table-scroll">
+      <table class="workout-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Distance</th>
+            <th>Duration</th>
+            <th>Avg HR</th>
+            <th>Cal</th>
+            <th>Effort</th>
+          </tr>
+        </thead>
+        <tbody id="cardioTableBody">
+          <tr><td>Apr 20</td><td>2.13 mi</td><td>34:12</td><td>142 bpm</td><td>239</td><td><span class="effort-pill effort-hard">Hard</span></td></tr>
+          <tr><td>Apr 20</td><td>1.94 mi</td><td>32:34</td><td>137 bpm</td><td>227</td><td><span class="effort-pill effort-moderate">Moderate</span></td></tr>
+          <tr><td>Apr 21</td><td>2.65 mi</td><td>43:03</td><td>134 bpm</td><td>307</td><td><span class="effort-pill effort-moderate">Moderate</span></td></tr>
+          <tr><td>Apr 22</td><td>0.71 mi</td><td>11:42</td><td>131 bpm</td><td>60</td><td><span class="effort-pill effort-easy">Easy</span></td></tr>
+          <tr><td colspan="6" style="text-align:center;padding:10px;color:var(--muted);font-size:12px;">Hit Refresh to load Apr 23–25 sessions from Notion</td></tr>
+        </tbody>
+      </table>
+      </div>
+      <p class="note">Current week: Apr 19–25. No cardio Apr 19. Apr 20 shows two separate walks. Hit Refresh for complete week data.</p>
+    </div>
+
+  </div>
+
+  <!-- NUTRITION -->
+  <div class="section-title">Nutrition — Meal Log (May 4–10)</div>
+  <div class="grid grid-2">
+
+    <div class="card">
+      <h3>Daily Calories <span>tracked entries only</span></h3>
+      <div class="chart-wrap">
+        <canvas id="caloriesChart"></canvas>
+      </div>
+      <p class="note">Apr 12–13 entries logged without macro data. All days likely under-reported.</p>
+    </div>
+
+    <div class="card">
+      <h3>Macros by Day <span>g tracked</span></h3>
+      <div class="chart-wrap">
+        <canvas id="macrosChart"></canvas>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- MACRO TARGET TRACKER -->
+  <div class="card" style="margin-top: 20px;">
+    <h3>Daily Macro Targets <span>Goal: fat loss + muscle · 192 → 175 lbs</span></h3>
+    <p id="macroTargetDate" style="font-size: 12px; color: var(--muted); margin-bottom: 20px;">Showing most recent logged day. Hit Refresh to update with live Notion data.</p>
+    <div class="target-tracker" id="macroTargets">
+      <!-- built by JS -->
+    </div>
+  </div>
+
+  <div class="card" style="margin-top: 20px;">
+    <h3>Meal Breakdown <span id="mealBreakdownSpan">Apr 14–22 · hit Refresh to load from Notion</span></h3>
+    <div class="table-scroll">
+    <table class="meal-table">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Meal</th>
+          <th>Type</th>
+          <th style="text-align:right">Cal</th>
+          <th style="text-align:right">Protein</th>
+          <th style="text-align:right">Carbs</th>
+          <th style="text-align:right">Fat</th>
+        </tr>
+      </thead>
+      <tbody id="mealBreakdownBody">
+        <tr>
+          <td colspan="7" style="text-align:center; padding: 40px; color: var(--muted);">
+            Click <strong>Refresh Data</strong> to load meals from Notion.
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+  </div>
+
+  <!-- BLOOD PRESSURE -->
+  <div class="section-title">Blood Pressure History</div>
+  <div class="grid grid-2">
+
+    <div class="card">
+      <h3>Systolic / Diastolic Trend <span>most recent readings on file</span></h3>
+      <div class="chart-wrap-lg">
+        <canvas id="bpChart"></canvas>
+      </div>
+      <p class="note">Latest readings from Jun–Jul 2025 import. Log a new reading in Notion to update.</p>
+    </div>
+
+    <div class="card" id="bpReadingsCard">
+      <h3>Recent Readings</h3>
+      <div class="bp-reading">
+        <span class="bp-date">May 4, 2026</span>
+        <span class="bp-nums">149 <span>/ 94</span></span>
+        <span class="bp-pulse">— bpm</span>
+        <span class="bp-status bp-stage2">Stage 2</span>
+      </div>
+      <div class="bp-reading">
+        <span class="bp-date">May 2, 2026</span>
+        <span class="bp-nums">168 <span>/ 93</span></span>
+        <span class="bp-pulse">— bpm</span>
+        <span class="bp-status bp-stage2">Stage 2</span>
+      </div>
+      <div class="bp-reading">
+        <span class="bp-date">May 1, 2026</span>
+        <span class="bp-nums">147 <span>/ 93</span></span>
+        <span class="bp-pulse">— bpm</span>
+        <span class="bp-status bp-stage2">Stage 2</span>
+      </div>
+      <div class="bp-reading">
+        <span class="bp-date">Apr 29, 2026</span>
+        <span class="bp-nums">145 <span>/ 96</span></span>
+        <span class="bp-pulse">— bpm</span>
+        <span class="bp-status bp-stage2">Stage 2</span>
+      </div>
+      <div class="bp-reading">
+        <span class="bp-date">Apr 27, 2026</span>
+        <span class="bp-nums">154 <span>/ 97</span></span>
+        <span class="bp-pulse">— bpm</span>
+        <span class="bp-status bp-stage2">Stage 2</span>
+      </div>
+      <div class="bp-reading">
+        <span class="bp-date">Apr 26, 2026</span>
+        <span class="bp-nums">174 <span>/ 104</span></span>
+        <span class="bp-pulse">— bpm</span>
+        <span class="bp-status bp-stage2">Stage 2</span>
+      </div>
+      <div class="bp-reading">
+        <span class="bp-date">Apr 24, 2026</span>
+        <span class="bp-nums">144 <span>/ 94</span></span>
+        <span class="bp-pulse">78 bpm</span>
+        <span class="bp-status bp-stage2">Stage 2</span>
+      </div>
+      <p style="margin-top:14px; font-size:12px; color:#6b7280;">Trend: Every reading since Apr 24 is Stage 2. Peak was 174/104 on Apr 26. May 4 reads 149/94 — slightly lower but still elevated. Seven consecutive Stage 2 readings warrants a call to your doctor.</p>
+    </div>
+
+  </div>
+
+  <!-- STRENGTH TRAINING -->
+  <div class="section-title">Strength Training</div>
+  <div class="card">
+    <h3>Logged This Week</h3>
+    <div class="table-scroll">
+    <table class="workout-table">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Workout Type</th>
+          <th>Exercise</th>
+          <th>Sets</th>
+          <th>Reps</th>
+          <th>Weight</th>
+          <th>Notes</th>
+        </tr>
+      </thead>
+      <tbody id="strengthBody">
+        <tr style="background:#fafafa;"><td>Apr 20</td><td>Upper Body Push Day</td><td>Shoulder Press</td><td>3</td><td>12</td><td>40 lbs</td><td></td></tr>
+        <tr style="background:#fafafa;"><td>Apr 20</td><td>Upper Body Push Day</td><td>Tricep Press</td><td>3</td><td>12</td><td>85 lbs</td><td></td></tr>
+        <tr style="background:#fafafa;"><td>Apr 20</td><td>Upper Body Push Day</td><td>Chest Press</td><td>3</td><td>12</td><td>55 lbs</td><td></td></tr>
+        <tr style="background:#fafafa;"><td>Apr 20</td><td>Upper Body Push Day</td><td>Dumbbell Overhead</td><td>3</td><td>12</td><td>30 lbs</td><td></td></tr>
+        <tr><td>Apr 22</td><td>Pull & Core</td><td>Cross Pull Cable</td><td>3</td><td>12</td><td>25 lbs</td><td></td></tr>
+        <tr><td>Apr 22</td><td>Pull & Core</td><td>Preacher Curls</td><td>3</td><td>12</td><td>45 lbs</td><td></td></tr>
+        <tr><td>Apr 22</td><td>Pull & Core</td><td>Lever Machine Row</td><td>3</td><td>12</td><td>70 lbs</td><td></td></tr>
+        <tr><td>Apr 22</td><td>Pull & Core</td><td>Cable Bar Push Down</td><td>3</td><td>12</td><td>42.5 lbs</td><td></td></tr>
+        <tr style="background:#fafafa;"><td>Apr 24</td><td>Leg Day</td><td>Squats</td><td>3</td><td>12</td><td>180 lbs</td><td></td></tr>
+        <tr style="background:#fafafa;"><td>Apr 24</td><td>Leg Day</td><td>Leg Extension</td><td>3</td><td>12</td><td>100 lbs</td><td></td></tr>
+        <tr style="background:#fafafa;"><td>Apr 24</td><td>Leg Day</td><td>Leg Curls</td><td>3</td><td>12</td><td>80 lbs</td><td></td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p class="note" style="margin-top:12px;">✅ 3 full strength sessions logged this week (Apr 20: Push, Apr 22: Pull, Apr 24: Leg Day). Perfect consistency.</p>
+  </div>
+
+  <!-- ADVICE — dynamically generated from Notion data on refresh -->
+  <div class="section-title" id="narrativeSectionTitle">Coaching Narrative</div>
+  <div class="advice-section" id="narrativeSection">
+    <h2>What the data says. What to do next.</h2>
+    <p class="week-label" id="narrativeWeekLabel">Based on your Notion logs · Jun 15-Jun 21, 2026</p>
+    <div class="narrative" id="narrativeText">For Jun 15-Jun 21, nutrition logging covered 7/7 days and 12 meals, averaging 800 calories, 42g protein, 81g carbs, and 34g fat on logged days. Cardio logged 2 sessions for 3.3 miles and 317 active calories; 0 sessions included heart-rate data, so average HR is unavailable this week. Blood pressure had 0 readings, leaving no weekly average and no trend to interpret. Strength training reached 1/3 completed days with 12 logged sets across Pull &amp; Core work, leaving the 3-day weekly target short by 2 sessions.</div>
+    <div class="advice-grid" id="narrativeAdviceGrid"><div class="advice-card">
+      <div class="ac-icon">🩺</div>
+      <div class="ac-title">Blood Pressure - No Weekly Average</div>
+      <div class="ac-body"><ul>
+        <li><strong>Week avg: unavailable</strong> because 0 BP readings were logged from Jun 15-Jun 21.</li>
+        <li>With 0 readings, the trend is unavailable; aim for 5+ seated morning readings this week.</li>
+        <li><strong>Action:</strong> take BP after 5 quiet minutes, before caffeine, and log it immediately.</li>
+      </ul></div></div><div class="advice-card">
+      <div class="ac-icon">🏋️</div>
+      <div class="ac-title">Strength - 1 of 3 Days Completed</div>
+      <div class="ac-body"><ul>
+        <li>1/3 strength days completed with 12 total logged sets, all on Jun 15.</li>
+        <li>Workout type covered: Pull &amp; Core, with tricep press, shoulder press, chest press, and dumbbell overhead press.</li>
+        <li><strong>This week:</strong> schedule all 3 sessions first; if time is tight, use full-body work instead of waiting for the perfect split.</li>
+      </ul></div></div><div class="advice-card">
+      <div class="ac-icon">🥩</div>
+      <div class="ac-title">Nutrition - Complete Logging, Protein Low</div>
+      <div class="ac-body"><ul>
+        <li>7/7 days logged with 12 meals, so accountability was much better than the prior week.</li>
+        <li>Averages on logged days: 800 cal · 42g protein · 81g carbs · 34g fat.</li>
+        <li>Protein averaged 133g below the 175g target. Front-load 40-60g by lunch before dinner choices get constrained.</li>
+        <li>Best day was Jun 20 at 97g protein, but it also carried the week-high 2,175 calories; repeat the protein structure with leaner defaults.</li>
+      </ul></div></div><div class="advice-card">
+      <div class="ac-icon">🏃</div>
+      <div class="ac-title">Cardio - 2 Sessions, Needs More</div>
+      <div class="ac-body"><ul>
+        <li>2 sessions totaled 3.3 miles and 317 active calories.</li>
+        <li>Logged sessions: Jun 16 2.16 mi/200 cal and Jun 18 1.09 mi/117 cal.</li>
+        <li>0 sessions included average HR, so intensity cannot be assessed this week.</li>
+        <li><strong>Next:</strong> add at least 2 more walks and make sure HR is captured on each session.</li>
+      </ul></div></div></div>
+  </div>
+
+
+</div><!-- /tab-week -->
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     MEAL PLAN TAB — diet plan + grocery list
+     ═══════════════════════════════════════════════════════════════════════ -->
+<div id="tab-mealplan" class="tab-panel">
+<main style="max-width:1300px; margin:0 auto; padding:24px 32px 40px;">
+
+  <!-- NOTES SETUP CARD -->
+  <div class="card" id="notesSetup" style="margin-bottom:0; border: 2px solid #e0e7ff; background:#f5f7ff;">
+    <div style="display:flex; align-items:flex-start; gap:16px;">
+      <div style="font-size:32px; line-height:1;">⚡</div>
+      <div style="flex:1;">
+        <h3 style="margin-bottom:6px; font-size:15px;">One-time setup: "Send to Notes" button</h3>
+        <p style="font-size:13px; color:var(--muted); margin-bottom:14px;">Once you do this once, the Send to Notes button on the shopping list will create an Apple Note instantly — every week, from any browser session.</p>
+        <ol style="font-size:13px; color:var(--text); line-height:2; padding-left:18px;">
+          <li>Open the <strong>Shortcuts</strong> app on your Mac</li>
+          <li>Open your existing <strong>"Shopping List to Notes"</strong> shortcut (or create a new one with that exact name)</li>
+          <li>Delete the existing "Create Note" action if there is one</li>
+          <li>Add the action: <strong>"Get Clipboard"</strong></li>
+          <li>Then add a second action: <strong>"Create Note"</strong></li>
+          <li>In the "Create Note" action, set the Body field to the <strong>output of "Get Clipboard"</strong> — drag it in or tap the field → Insert Variable → Clipboard</li>
+          <li>Save the shortcut</li>
+        </ol>
+        <p style="font-size:12px; color:var(--muted); margin-top:10px;">The button now copies the list to your clipboard first, then fires the shortcut. "Get Clipboard" grabs it reliably — no URL encoding issues.</p>
+        <button onclick="document.getElementById('notesSetup').style.display='none'; localStorage.setItem('notesSetupDismissed','1')" style="margin-top:12px; background:#6366f1; color:white; border:none; padding:7px 16px; border-radius:8px; font-size:12px; cursor:pointer; font-weight:600;">Got it, hide this</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MEAL PLAN -->
+  <div class="section-title">Meal Plan — Week of Apr 19–25, 2026</div>
+  <div class="card" style="padding: 0; overflow: hidden;">
+    <div class="plan-header">
+      <div>
+        <h3 style="margin:0; font-size:16px;">7-Day High-Protein Plan</h3>
+        <p style="font-size:12px; color:rgba(255,255,255,0.6); margin-top:3px;">Target: 2,500 cal · 175g protein · 280g carbs · 75g fat · Low sodium</p>
+      </div>
+      <button class="clear-btn" onclick="clearSection('meal')">Reset all</button>
+    </div>
+
+    <div class="plan-days" id="mealPlan">
+      <!-- Day rows injected by JS -->
+    </div>
+  </div>
+
+  <!-- SHOPPING LIST -->
+  <div class="section-title">Shopping List — Week of Apr 19–25</div>
+  <div class="card" style="padding: 0; overflow: hidden;">
+    <div class="plan-header">
+      <div>
+        <h3 style="margin:0; font-size:16px;">Grocery List</h3>
+        <p style="font-size:12px; color:rgba(255,255,255,0.6); margin-top:3px;">Everything you need for the meal plan above</p>
+      </div>
+      <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+        <button class="clear-btn" onclick="sendToNotes()" id="notesBtn" title="Requires one-time Shortcut setup — see instructions below">📝 Send to Notes</button>
+        <button class="clear-btn" onclick="copyList()" id="copyBtn">📋 Copy list</button>
+        <button class="clear-btn" onclick="clearSection('shop')">Reset all</button>
+      </div>
+    </div>
+    <div class="shop-grid" id="shopList">
+      <!-- Injected by JS -->
+    </div>
+  </div>
+
+</main>
+</div><!-- /tab-mealplan -->
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     HISTORY TAB — all data from Apr 13 onwards
+     ═══════════════════════════════════════════════════════════════════════ -->
+<div id="tab-history" class="tab-panel">
+
+  <!-- CARDIO HISTORY -->
+  <div class="section-title">Cardio — All Sessions (Apr 13 – present)</div>
+  <div class="grid grid-2">
+    <div class="card">
+      <h3>Distance by Session <span>miles · all logged sessions</span></h3>
+      <div class="chart-wrap">
+        <canvas id="distanceChartH"></canvas>
+      </div>
+    </div>
+    <div class="card">
+      <h3>All Cardio Sessions</h3>
+      <div class="table-scroll">
+        <table class="workout-table">
+          <thead>
+            <tr><th>Date</th><th>Distance</th><th>Duration</th><th>Avg HR</th><th>Cal</th><th>Effort</th></tr>
+          </thead>
+          <tbody id="cardioTableBodyH">
+            <tr><td>Apr 13</td><td>2.13 mi</td><td>34:21</td><td>133 bpm</td><td>225</td><td><span class="effort-pill effort-moderate">Moderate</span></td></tr>
+            <tr><td>Apr 14</td><td>3.08 mi</td><td>56:07</td><td>148 bpm</td><td>470</td><td><span class="effort-pill effort-hard">Hard</span></td></tr>
+            <tr><td>Apr 15</td><td>2.46 mi</td><td>39:53</td><td>147 bpm</td><td>378</td><td><span class="effort-pill effort-hard">Hard</span></td></tr>
+            <tr><td>Apr 16</td><td>2.13 mi</td><td>37:23</td><td>128 bpm</td><td>252</td><td><span class="effort-pill effort-moderate">Moderate</span></td></tr>
+            <tr><td>Apr 17</td><td>1.79 mi</td><td>30:47</td><td>134 bpm</td><td>203</td><td><span class="effort-pill effort-easy">Easy</span></td></tr>
+            <tr><td>Apr 20</td><td>2.13 mi</td><td>34:12</td><td>142 bpm</td><td>239</td><td><span class="effort-pill effort-hard">Hard</span></td></tr>
+            <tr><td>Apr 20</td><td>1.94 mi</td><td>32:34</td><td>137 bpm</td><td>227</td><td><span class="effort-pill effort-moderate">Moderate</span></td></tr>
+            <tr><td>Apr 21</td><td>2.65 mi</td><td>43:03</td><td>134 bpm</td><td>307</td><td><span class="effort-pill effort-moderate">Moderate</span></td></tr>
+            <tr><td>Apr 22</td><td>0.71 mi</td><td>11:42</td><td>131 bpm</td><td>60</td><td><span class="effort-pill effort-easy">Easy</span></td></tr>
+            <tr><td colspan="6" style="text-align:center;padding:10px;color:var(--muted);font-size:12px;">Hit Refresh for Apr 23–25 sessions</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="note">12 sessions total (Apr 13–24) · 22.81 mi · 2,912 active cal · Hit Refresh to update</p>
+    </div>
+  </div>
+
+  <!-- NUTRITION HISTORY -->
+  <div class="section-title">Nutrition — All Tracked Days (Apr 14 – present)</div>
+  <div class="grid grid-2">
+    <div class="card">
+      <h3>Daily Calories <span>all tracked days</span></h3>
+      <div class="chart-wrap">
+        <canvas id="caloriesChartH"></canvas>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Macro Breakdown <span>protein · carbs · fat</span></h3>
+      <div class="chart-wrap">
+        <canvas id="macrosChartH"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- MACRO TARGETS (history) -->
+  <div class="card" style="margin-top:20px;">
+    <h3>Average Macros vs Target <span>Apr 14–22 complete data</span></h3>
+    <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:24px; margin-top:8px;">
+      <div>
+        <div style="font-size:13px;font-weight:600;margin-bottom:6px;">Calories</div>
+        <div style="font-size:22px;font-weight:700;">1,370</div>
+        <div style="font-size:12px;color:var(--muted);">avg/day · target 2,500</div>
+        <div style="background:#f3f4f6;border-radius:99px;height:8px;margin-top:6px;overflow:hidden;">
+          <div style="width:55%;height:100%;background:#10b981;border-radius:99px;"></div>
+        </div>
+      </div>
+      <div>
+        <div style="font-size:13px;font-weight:600;margin-bottom:6px;">Protein</div>
+        <div style="font-size:22px;font-weight:700;">74g</div>
+        <div style="font-size:12px;color:var(--muted);">avg/day · target 175g</div>
+        <div style="background:#f3f4f6;border-radius:99px;height:8px;margin-top:6px;overflow:hidden;">
+          <div style="width:42%;height:100%;background:#3b82f6;border-radius:99px;"></div>
+        </div>
+      </div>
+      <div>
+        <div style="font-size:13px;font-weight:600;margin-bottom:6px;">Carbs</div>
+        <div style="font-size:22px;font-weight:700;">163g</div>
+        <div style="font-size:12px;color:var(--muted);">avg/day · target 280g</div>
+        <div style="background:#f3f4f6;border-radius:99px;height:8px;margin-top:6px;overflow:hidden;">
+          <div style="width:58%;height:100%;background:#f59e0b;border-radius:99px;"></div>
+        </div>
+      </div>
+      <div>
+        <div style="font-size:13px;font-weight:600;margin-bottom:6px;">Fat</div>
+        <div style="font-size:22px;font-weight:700;">52g</div>
+        <div style="font-size:12px;color:var(--muted);">avg/day · target 75g</div>
+        <div style="background:#f3f4f6;border-radius:99px;height:8px;margin-top:6px;overflow:hidden;">
+          <div style="width:69%;height:100%;background:#ec4899;border-radius:99px;"></div>
+        </div>
+      </div>
+    </div>
+    <p class="note" style="margin-top:14px;">Averages across Apr 14–22 (9 tracked days). Protein at 42% of target is the biggest gap. Calories are consistently below the 2,500 goal — focus on adding a protein source at every meal.</p>
+  </div>
+
+  <!-- MEAL BREAKDOWN HISTORY -->
+  <div class="card" style="margin-top:20px;">
+    <h3>Meal Breakdown <span id="mealBreakdownSpanH">All tracked meals · hit Refresh to load</span></h3>
+    <div class="table-scroll">
+      <table class="meal-table">
+        <thead>
+          <tr>
+            <th>Date</th><th>Meal</th><th>Type</th>
+            <th style="text-align:right">Cal</th>
+            <th style="text-align:right">Protein</th>
+            <th style="text-align:right">Carbs</th>
+            <th style="text-align:right">Fat</th>
+          </tr>
+        </thead>
+        <tbody id="mealBreakdownBodyH">
+          <tr><td colspan="7" style="text-align:center;padding:40px;color:var(--muted);">Click <strong>Refresh Data</strong> to load all meals from Notion.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- BP HISTORY -->
+  <div class="section-title">Blood Pressure History</div>
+  <div class="grid grid-2">
+    <div class="card">
+      <h3>Systolic / Diastolic Trend <span>all readings</span></h3>
+      <div class="chart-wrap-lg">
+        <canvas id="bpChartH"></canvas>
+      </div>
+    </div>
+    <div class="card">
+      <h3>All Readings</h3>
+      <div class="bp-reading">
+        <span class="bp-date">Apr 26, 2026</span>
+        <span class="bp-nums">162 <span>/ 106</span></span>
+        <span class="bp-pulse">90 bpm</span>
+        <span class="bp-status bp-stage2">Stage 2</span>
+      </div>
+      <div class="bp-reading">
+        <span class="bp-date">Apr 24, 2026</span>
+        <span class="bp-nums">144 <span>/ 94</span></span>
+        <span class="bp-pulse">78 bpm</span>
+        <span class="bp-status bp-stage2">Stage 2</span>
+      </div>
+      <div class="bp-reading">
+        <span class="bp-date">Jul 2, 2025</span>
+        <span class="bp-nums">132 <span>/ 93</span></span>
+        <span class="bp-pulse">83 bpm</span>
+        <span class="bp-status bp-stage1">Stage 1</span>
+      </div>
+      <div class="bp-reading">
+        <span class="bp-date">Jun 25, 2025</span>
+        <span class="bp-nums">152 <span>/ 96</span></span>
+        <span class="bp-pulse">68 bpm</span>
+        <span class="bp-status bp-stage2">Stage 2</span>
+      </div>
+      <div class="bp-reading">
+        <span class="bp-date">Jun 23, 2025</span>
+        <span class="bp-nums">146 <span>/ 99</span></span>
+        <span class="bp-pulse">87 bpm</span>
+        <span class="bp-status bp-stage2">Stage 2</span>
+      </div>
+      <div class="bp-reading">
+        <span class="bp-date">Jun 10, 2025</span>
+        <span class="bp-nums">154 <span>/ 97</span></span>
+        <span class="bp-pulse">74 bpm</span>
+        <span class="bp-status bp-stage2">Stage 2</span>
+      </div>
+      <div class="bp-reading">
+        <span class="bp-date">Jun 4, 2025</span>
+        <span class="bp-nums">168 <span>/ 106</span></span>
+        <span class="bp-pulse">70 bpm</span>
+        <span class="bp-status bp-stage2">Stage 2</span>
+      </div>
+      <p style="margin-top:14px;font-size:12px;color:#6b7280;">Systolic dropped 36 points (168→132) over 4 weeks in Jun–Jul 2025. It has since climbed to 162 as of Apr 26 — back near the Jun 2025 peak. Medication + sodium reduction are the primary levers.</p>
+    </div>
+  </div>
+
+  <!-- STRENGTH HISTORY -->
+  <div class="section-title">Strength Training — All Sessions</div>
+  <div class="card">
+    <h3>All Logged Exercises</h3>
+    <div class="table-scroll">
+      <table class="workout-table">
+        <thead>
+          <tr><th>Date</th><th>Workout Type</th><th>Exercise</th><th>Sets</th><th>Reps</th><th>Weight</th><th>Notes</th></tr>
+        </thead>
+        <tbody id="strengthBodyH">
+          <tr><td>Apr 14</td><td>Pull & Core</td><td>Face Pulls</td><td>3</td><td>12</td><td>25 lbs</td><td>3×12 (programmed 3×15)</td></tr>
+          <tr style="background:#fafafa;"><td>Apr 20</td><td>Upper Body Push</td><td>Shoulder Press</td><td>3</td><td>12</td><td>40 lbs</td><td></td></tr>
+          <tr style="background:#fafafa;"><td>Apr 20</td><td>Upper Body Push</td><td>Tricep Press</td><td>3</td><td>12</td><td>85 lbs</td><td></td></tr>
+          <tr style="background:#fafafa;"><td>Apr 20</td><td>Upper Body Push</td><td>Chest Press</td><td>3</td><td>12</td><td>55 lbs</td><td></td></tr>
+          <tr style="background:#fafafa;"><td>Apr 20</td><td>Upper Body Push</td><td>Dumbbell Overhead</td><td>3</td><td>12</td><td>30 lbs</td><td></td></tr>
+          <tr><td>Apr 22</td><td>Pull & Core</td><td>Cross Pull Cable</td><td>3</td><td>12</td><td>25 lbs</td><td></td></tr>
+          <tr><td>Apr 22</td><td>Pull & Core</td><td>Preacher Curls</td><td>3</td><td>12</td><td>45 lbs</td><td></td></tr>
+          <tr><td>Apr 22</td><td>Pull & Core</td><td>Lever Machine Row</td><td>3</td><td>12</td><td>70 lbs</td><td></td></tr>
+          <tr><td>Apr 22</td><td>Pull & Core</td><td>Cable Bar Push Down</td><td>3</td><td>12</td><td>42.5 lbs</td><td></td></tr>
+          <tr style="background:#fafafa;"><td>Apr 24</td><td>Leg Day</td><td>Squats</td><td>3</td><td>12</td><td>180 lbs</td><td></td></tr>
+          <tr style="background:#fafafa;"><td>Apr 24</td><td>Leg Day</td><td>Leg Extension</td><td>3</td><td>12</td><td>100 lbs</td><td></td></tr>
+          <tr style="background:#fafafa;"><td>Apr 24</td><td>Leg Day</td><td>Leg Curls</td><td>3</td><td>12</td><td>80 lbs</td><td></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="note" style="margin-top:12px;">4 sessions total (Apr 14, 20, 22, 24). Push · Pull · Legs all completed this week. Hit Refresh to pull latest from Notion.</p>
+  </div>
+
+</div><!-- /tab-history -->
+
+</main>
+
+<footer id="dashboardFooter">
+  Data sourced from Notion Health Tracking workspace · Updated Apr 24, 2026 · All calorie/macro estimates are from logged entries; actual intake may be higher on incompletely tracked days · Charts reflect Apr 14–22 complete data
+</footer>
+
+<script>
+  const DEMO_HEALTH_DATA = {
+  "generated_at": "2026-06-24T07:30:00Z",
+  "meals": [
+    {
+      "date": "2026-06-18T08:00:00Z",
+      "meal_type": "breakfast",
+      "description": "Greek yogurt, berries, granola",
+      "calories": 520,
+      "protein": 42,
+      "carbs": 58,
+      "fat": 14
+    },
+    {
+      "date": "2026-06-18T12:30:00Z",
+      "meal_type": "lunch",
+      "description": "Turkey sandwich and apple",
+      "calories": 680,
+      "protein": 48,
+      "carbs": 74,
+      "fat": 21
+    },
+    {
+      "date": "2026-06-19T19:00:00Z",
+      "meal_type": "dinner",
+      "description": "Salmon, rice, broccoli",
+      "calories": 760,
+      "protein": 55,
+      "carbs": 70,
+      "fat": 28
+    },
+    {
+      "date": "2026-06-20T09:00:00Z",
+      "meal_type": "breakfast",
+      "description": "Oatmeal, banana, protein shake",
+      "calories": 610,
+      "protein": 51,
+      "carbs": 82,
+      "fat": 11
+    },
+    {
+      "date": "2026-06-21T18:45:00Z",
+      "meal_type": "dinner",
+      "description": "Chicken bowl with avocado",
+      "calories": 820,
+      "protein": 62,
+      "carbs": 76,
+      "fat": 30
+    },
+    {
+      "date": "2026-06-22T13:00:00Z",
+      "meal_type": "lunch",
+      "description": "Tuna salad wrap",
+      "calories": 590,
+      "protein": 44,
+      "carbs": 49,
+      "fat": 22
+    },
+    {
+      "date": "2026-06-23T20:00:00Z",
+      "meal_type": "dinner",
+      "description": "Pasta with turkey meat sauce",
+      "calories": 910,
+      "protein": 57,
+      "carbs": 104,
+      "fat": 29
+    },
+    {
+      "date": "2026-06-24T08:10:00Z",
+      "meal_type": "breakfast",
+      "description": "Eggs, toast, fruit",
+      "calories": 540,
+      "protein": 36,
+      "carbs": 50,
+      "fat": 20
+    }
+  ],
+  "cardio": [
+    {
+      "date": "2026-06-18T07:10:00Z",
+      "type": "Run",
+      "distance_miles": 4.2,
+      "active_calories": 430,
+      "avg_hr": 142
+    },
+    {
+      "date": "2026-06-20T08:30:00Z",
+      "type": "Run",
+      "distance_miles": 6.1,
+      "active_calories": 650,
+      "avg_hr": 148
+    },
+    {
+      "date": "2026-06-23T07:00:00Z",
+      "type": "Run",
+      "distance_miles": 3.8,
+      "active_calories": 390,
+      "avg_hr": 139
+    }
+  ],
+  "strength": [
+    {
+      "date": "2026-06-19T18:00:00Z",
+      "workout": "Push",
+      "sets": 14
+    },
+    {
+      "date": "2026-06-21T17:30:00Z",
+      "workout": "Legs",
+      "sets": 16
+    },
+    {
+      "date": "2026-06-24T06:30:00Z",
+      "workout": "Pull/Core",
+      "sets": 12
+    }
+  ],
+  "blood_pressure": [
+    {
+      "date": "2026-06-18T07:00:00Z",
+      "systolic": 124,
+      "diastolic": 78,
+      "pulse": 62
+    },
+    {
+      "date": "2026-06-21T07:00:00Z",
+      "systolic": 121,
+      "diastolic": 76,
+      "pulse": 60
+    },
+    {
+      "date": "2026-06-24T07:00:00Z",
+      "systolic": 119,
+      "diastolic": 75,
+      "pulse": 59
+    }
+  ]
+};
+
+  // Chart defaults
+  Chart.defaults.font.family = "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+  Chart.defaults.color = '#6b7280';
+
+  // Store chart instances for live updates
+  let charts = {};
+
+  // ── Environment detection + server URL ────────────────────────────────────
+  // When deployed to Vercel, the API is at /api/refresh (same origin).
+  // When running locally via server.py, use the configurable server URL.
+  const IS_VERCEL = !['localhost', '127.0.0.1'].includes(window.location.hostname)
+                    && !window.location.hostname.match(/^192\.168\.|^10\.|^172\./);
+
+  const SERVER_KEY = 'hd_server_url';
+  function getServerUrl() {
+    return localStorage.getItem(SERVER_KEY) || 'http://localhost:8765';
+  }
+  function getRefreshUrl() {
+    if (IS_VERCEL) return '/api/refresh';
+    if (window.location.protocol.startsWith('http') && window.location.port === '8765') {
+      return window.location.origin + '/api/refresh';
+    }
+    const base = document.getElementById('serverUrl').value.trim() || getServerUrl();
+    return base.replace(/\/$/, '') + '/api/refresh';
+  }
+  function getUncachedRefreshUrl() {
+    const url = new URL(getRefreshUrl(), window.location.href);
+    url.searchParams.set('_', Date.now().toString());
+    return url.toString();
+  }
+  function saveServerUrl() {
+    const val = document.getElementById('serverUrl').value.trim();
+    const url = val || 'http://localhost:8765';
+    localStorage.setItem(SERVER_KEY, url);
+    document.getElementById('serverUrl').value = url;
+    const btn = event.target;
+    btn.textContent = '✓ Saved';
+    setTimeout(() => btn.textContent = 'Save', 1500);
+  }
+  // Pre-fill / hide server config based on environment
+  document.addEventListener('DOMContentLoaded', () => {
+    const cfg = document.querySelector('.server-config');
+    if (IS_VERCEL) {
+      // On Vercel, hide the server URL row — it's not needed
+      if (cfg) cfg.style.display = 'none';
+    } else {
+      const stored = localStorage.getItem(SERVER_KEY);
+      if (stored && document.getElementById('serverUrl'))
+        document.getElementById('serverUrl').value = stored;
+    }
+  });
+
+  function refreshDataOnLoad() {
+    if (!document.getElementById('refreshBtn')) return;
+    window.requestAnimationFrame(() => refreshData({ automatic: true }));
+  }
+
+  // ── Live refresh from local server ─────────────────────────────────────────
+  async function refreshData(options = {}) {
+    const automatic = Boolean(options.automatic);
+    const btn   = document.getElementById('refreshBtn');
+    const icon  = document.getElementById('refreshIcon');
+    const label = document.getElementById('refreshLabel');
+    const status = document.getElementById('refreshStatus');
+
+    icon.style.animation = 'spin 1s linear infinite';
+    icon.style.display = 'inline-block';
+    label.textContent = automatic ? 'Loading Latest…' : 'Refreshing…';
+    btn.disabled = true;
+    status.style.color = 'rgba(255,255,255,0.5)';
+    status.textContent = automatic ? 'Loading latest Notion data…' : '';
+    status.style.display = automatic ? 'block' : 'none';
+
+    try {
+      const res  = await fetch(getUncachedRefreshUrl(), {
+        method: 'GET',
+        cache: 'no-store',
+        headers: { 'Cache-Control': 'no-cache' },
+      });
+      if (!res.ok) throw new Error(`Server error ${res.status}`);
+      const data = await res.json();
+      applyRefreshedData(data);
+      const t = new Date(data.generated_at);
+      status.textContent = `${automatic ? 'Loaded latest' : 'Last refreshed'} ${t.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})} · ${data.meals?.length || 0} meals · ${data.cardio?.length || 0} cardio · ${data.strength?.length || 0} strength`;
+      status.style.display = 'block';
+    } catch (e) {
+      status.textContent = e.message.includes('Failed to fetch')
+        ? '⚠️ Server unreachable — run python3 server.py locally, or enter your ngrok/LAN URL above'
+        : `⚠️ ${e.message}`;
+      status.style.color = '#fbbf24';
+      status.style.display = 'block';
+    } finally {
+      icon.style.animation = '';
+      label.textContent = 'Refresh Data';
+      btn.disabled = false;
+    }
+  }
+
+  function applyRefreshedData(data) {
+    // ── Current week bounds (Sun–Sat) ────────────────────────────────────────
+    const now = new Date(data.generated_at);
+    const dayOfWeek = now.getDay(); // 0=Sun
+    const weekStart = new Date(now);
+    weekStart.setDate(now.getDate() - dayOfWeek);
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekStart.getDate() + 6);
+    const weekStartStr = weekStart.toISOString().slice(0,10);
+    const weekEndStr   = weekEnd.toISOString().slice(0,10);
+    const weekDates = [];
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(weekStart);
+      d.setDate(weekStart.getDate() + i);
+      weekDates.push(d.toISOString().slice(0, 10));
+    }
+    const refreshedDate = now.toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
+
+    const subtitle = document.getElementById('dashboardSubtitle');
+    if (subtitle) {
+      subtitle.textContent = `${fmtDate(weekStartStr)} – ${fmtDate(weekEndStr)}, ${weekEnd.getFullYear()} · Data from Notion Health Tracking · Updated ${refreshedDate}`;
+    }
+
+    const footer = document.getElementById('dashboardFooter');
+    if (footer) {
+      footer.textContent = `Data sourced from Notion Health Tracking workspace · Updated ${refreshedDate} · Live data loaded from Notion · All calorie/macro estimates are from logged entries; actual intake may be higher on incompletely tracked days`;
+    }
+
+    // ── Cardio — current week only ───────────────────────────────────────────
+    const cardio = data.cardio
+      .filter(r => r.date && r.active_cal && r.date >= weekStartStr && r.date <= weekEndStr)
+      .sort((a,b) => a.date.localeCompare(b.date));
+
+    if (charts.distance) {
+      charts.distance.data.labels = cardio.length ? cardio.map(r => fmtDate(r.date)) : weekDates.map(fmtDate);
+      charts.distance.data.datasets[0].data = cardio.length ? cardio.map(r => parseFloat(r.distance) || 0) : weekDates.map(() => 0);
+      charts.distance.update();
+    }
+
+    // Rebuild cardio table
+    const tbody = document.querySelector('.workout-table tbody');
+    if (tbody) {
+      if (cardio.length) {
+        tbody.innerHTML = cardio.map(r => {
+          const dist = r.distance || '—';
+          const hr   = r.avg_hr  || '—';
+          const cal  = r.active_cal || '—';
+          const effort = hr >= 145 ? 'Hard' : hr >= 130 ? 'Moderate' : 'Easy';
+          const cls   = hr >= 145 ? 'effort-hard' : hr >= 130 ? 'effort-moderate' : 'effort-easy';
+          return `<tr>
+            <td>${fmtDate(r.date)}</td>
+            <td>${dist}</td>
+            <td>${r.duration || '—'}</td>
+            <td>${hr !== '—' ? hr + ' bpm' : '—'}</td>
+            <td>${cal}</td>
+            <td><span class="effort-pill ${cls}">${effort}</span></td>
+          </tr>`;
+        }).join('');
+      } else {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:16px;color:var(--muted)">No cardio logged this week yet</td></tr>`;
+      }
+    }
+
+    // Update header stats (current week)
+    const totalDist = cardio.reduce((s,r) => s + (parseFloat(r.distance)||0), 0);
+    const totalCal  = cardio.reduce((s,r) => s + (r.active_cal||0), 0);
+    const statCards = document.querySelectorAll('.header-stat');
+    if (statCards.length >= 3) {
+      statCards[0].querySelector('.value').textContent = cardio.length;
+      statCards[0].querySelector('.sub').textContent   = 'This week (live)';
+      statCards[1].querySelector('.value').textContent = totalDist.toFixed(2) + ' mi';
+      statCards[1].querySelector('.sub').textContent   = 'This week';
+      statCards[2].querySelector('.value').textContent = totalCal.toLocaleString();
+      statCards[2].querySelector('.sub').textContent   = 'Active cal this week';
+    }
+
+    // ── Nutrition ───────────────────────────────────────────────────────────
+    // Calculate 7-day range based on data generation time
+    const dates = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(now);
+      d.setDate(now.getDate() - i);
+      dates.push(d.toISOString().slice(0, 10));
+    }
+
+    const meals = data.meals.filter(r => r.date && r.date.slice(0, 10) >= dates[0]);
+    // Group by date, pre-populating with the 7 days to ensure they show in charts
+    const byDay = {};
+    dates.forEach(d => {
+      byDay[d] = {cal:0, protein:0, carbs:0, fat:0, count:0};
+    });
+
+    meals.forEach(r => {
+      const d = r.date.slice(0,10);
+      if (byDay[d]) {
+        byDay[d].cal     += r.calories || 0;
+        byDay[d].protein += r.protein  || 0;
+        byDay[d].carbs   += r.carbs    || 0;
+        byDay[d].fat     += r.fat      || 0;
+        byDay[d].count   += 1;
+      }
+    });
+    const mealDays = dates;
+
+    // Update section title
+    const nutritionTitle = document.querySelector('.section-title:nth-of-type(2)');
+    if (nutritionTitle) {
+      nutritionTitle.textContent = `Nutrition — Meal Log (${fmtDate(dates[0])}–${fmtDate(dates[6])})`;
+    }
+
+    if (mealDays.length && charts.calories) {
+      charts.calories.data.labels = mealDays.map(fmtDate);
+      charts.calories.data.datasets[0].data = mealDays.map(d => byDay[d].cal);
+      // Update target line to match the number of days
+      charts.calories.data.datasets[1].data = mealDays.map(() => 2500);
+      charts.calories.update();
+    }
+    if (mealDays.length && charts.macros) {
+      charts.macros.data.labels = mealDays.map(fmtDate);
+      charts.macros.data.datasets[0].data = mealDays.map(d => byDay[d].protein);
+      charts.macros.data.datasets[1].data = mealDays.map(d => byDay[d].carbs);
+      charts.macros.data.datasets[2].data = mealDays.map(d => byDay[d].fat);
+      charts.macros.update();
+    }
+
+    // Update macro target tracker with most recent day
+    const lastDay = mealDays[mealDays.length - 1];
+    latestMacros = {
+      calories: Math.round(byDay[lastDay].cal),
+      protein:  Math.round(byDay[lastDay].protein),
+      carbs:    Math.round(byDay[lastDay].carbs),
+      fat:      Math.round(byDay[lastDay].fat),
+      label:    fmtDate(lastDay) + ' (live)',
+    };
+    buildMacroTargets();
+
+    // Update header macro cards
+    const dayLabel = fmtDate(lastDay) + ' · live';
+    const pEl = document.getElementById('statProtein');
+    const cEl = document.getElementById('statCarbs');
+    const fEl = document.getElementById('statFat');
+    if (pEl) { pEl.textContent = latestMacros.protein + 'g'; document.getElementById('statProteinSub').textContent = dayLabel + ' · target 175g'; }
+    if (cEl) { cEl.textContent = latestMacros.carbs + 'g';   document.getElementById('statCarbsSub').textContent = dayLabel + ' · target 280g'; }
+    if (fEl) { fEl.textContent = latestMacros.fat + 'g';     document.getElementById('statFatSub').textContent = dayLabel + ' · target 75g'; }
+
+    // ── Meal Breakdown table ────────────────────────────────────────────────
+    const mealBody = document.getElementById('mealBreakdownBody');
+    if (mealBody) {
+      const mealTypeClass = { breakfast:'meal-breakfast', lunch:'meal-lunch', dinner:'meal-dinner', snack:'meal-snack' };
+      const mealTypeLabel = { breakfast:'Breakfast', lunch:'Lunch', dinner:'Dinner', snack:'Snack' };
+      let html = '';
+      
+      if (meals.length === 0) {
+        html = '<tr><td colspan="7" style="text-align:center; padding: 40px; color: var(--muted);">No meals logged in the last 7 days.</td></tr>';
+      } else {
+        mealDays.forEach(day => {
+          const dayMeals = meals.filter(r => r.date && r.date.slice(0,10) === day)
+                                .sort((a,b) => (a.date||'').localeCompare(b.date||''));
+          
+          if (dayMeals.length === 0) return;
+
+          dayMeals.forEach(m => {
+            const type  = (m.meal_type||'').toLowerCase();
+            const cls   = mealTypeClass[type] || 'meal-snack';
+            const label = mealTypeLabel[type] || m.meal_type || '—';
+            html += `<tr>
+              <td>${fmtDate(day)}</td>
+              <td>${m.name || '—'}</td>
+              <td><span class="meal-pill ${cls}">${label}</span></td>
+              <td style="text-align:right">${m.calories ?? '—'}</td>
+              <td style="text-align:right">${m.protein  != null ? m.protein  + 'g' : '—'}</td>
+              <td style="text-align:right">${m.carbs    != null ? m.carbs    + 'g' : '—'}</td>
+              <td style="text-align:right">${m.fat      != null ? m.fat      + 'g' : '—'}</td>
+            </tr>`;
+          });
+          // Daily total row
+          html += `<tr style="background:#f9fafb; font-weight:600;">
+            <td colspan="3" style="text-align:right; color:#6b7280; font-size:12px;">${fmtDate(day)} Total</td>
+            <td style="text-align:right">${byDay[day].cal}</td>
+            <td style="text-align:right">${byDay[day].protein}g</td>
+            <td style="text-align:right">${byDay[day].carbs}g</td>
+            <td style="text-align:right">${byDay[day].fat}g</td>
+          </tr>`;
+        });
+      }
+      mealBody.innerHTML = html;
+      const span = document.getElementById('mealBreakdownSpan');
+      if (span && mealDays.length) {
+        span.textContent = fmtDate(mealDays[0]) + '–' + fmtDate(mealDays[mealDays.length-1]) + ' · live from Notion';
+      }
+    }
+
+    // ── Strength Training table ─────────────────────────────────────────────
+    const strengthBody = document.getElementById('strengthBody');
+    if (strengthBody) {
+      const rows = (data.strength || []).filter(r => r.date)
+                                .sort((a,b) => a.date.localeCompare(b.date));
+      strengthBody.innerHTML = rows.length ? rows.map(r => `<tr>
+        <td>${fmtDate(r.date)}</td>
+        <td>${r.workout_type || '—'}</td>
+        <td>${r.exercise || '—'}</td>
+        <td>${r.sets ?? '—'}</td>
+        <td>${r.reps ?? '—'}</td>
+        <td>${r.weight != null ? r.weight + ' lbs' : '—'}</td>
+        <td>${r.difficulty || ''}</td>
+      </tr>`).join('') : `<tr><td colspan="7" style="text-align:center;padding:16px;color:var(--muted)">No strength training logged yet</td></tr>`;
+    }
+
+    // ── Blood Pressure ──────────────────────────────────────────────────────
+    const bp = data.blood_pressure
+      .filter(r => r.date && r.systolic && r.diastolic)
+      .sort((a,b) => a.date.localeCompare(b.date))
+      .slice(-10);
+
+    if (charts.bp) {
+      charts.bp.data.labels = bp.map(r => fmtDate(r.date));
+      charts.bp.data.datasets[0].data = bp.map(r => r.systolic);
+      charts.bp.data.datasets[1].data = bp.map(r => r.diastolic);
+      charts.bp.data.datasets[2].data = bp.map(() => 120);
+      charts.bp.update();
+    }
+
+    // Rebuild Recent Readings card
+    const bpCard = document.getElementById('bpReadingsCard');
+    if (bpCard && bp.length) {
+      const sorted = [...bp].sort((a,b) => b.date.localeCompare(a.date)).slice(0, 7);
+      const stageLabel = (s, d) => {
+        if (s >= 180 || d >= 120) return ['Crisis', 'bp-crisis'];
+        if (s >= 140 || d >= 90)  return ['Stage 2', 'bp-stage2'];
+        if (s >= 130 || d >= 80)  return ['Stage 1', 'bp-stage1'];
+        if (s >= 120)             return ['Elevated', 'bp-elevated'];
+        return ['Normal', 'bp-normal'];
+      };
+      const rows = sorted.map(r => {
+        const [label, cls] = stageLabel(r.systolic, r.diastolic);
+        const pulse = r.pulse ? r.pulse + ' bpm' : '— bpm';
+        const dateObj = r.date ? new Date(r.date + 'T12:00:00') : new Date();
+        const timeObj = r.created_time ? new Date(r.created_time) : null;
+        const dateStr = dateObj.toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' })
+          + (timeObj ? ' · ' + timeObj.toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit', hour12:true }) : '');
+        return `<div class="bp-reading">
+          <span class="bp-date">${dateStr}</span>
+          <span class="bp-nums">${r.systolic} <span>/ ${r.diastolic}</span></span>
+          <span class="bp-pulse">${pulse}</span>
+          <span class="bp-status ${cls}">${label}</span>
+        </div>`;
+      }).join('');
+      bpCard.innerHTML = `<h3>Recent Readings</h3>${rows}
+        <p style="margin-top:14px; font-size:12px; color:#6b7280;">Live from Notion · ${sorted.length} most recent readings shown</p>`;
+    }
+
+    // ── History tab — update with ALL data (not week-filtered) ──────────────
+
+    // History cardio table — all sessions
+    const allCardio = data.cardio
+      .filter(r => r.date && r.active_cal)
+      .sort((a,b) => a.date.localeCompare(b.date));
+
+    const cardioTbodyH = document.getElementById('cardioTableBodyH');
+    if (cardioTbodyH) {
+      cardioTbodyH.innerHTML = allCardio.length ? allCardio.map(r => {
+        const hr     = r.avg_hr || '—';
+        const effort = hr >= 145 ? 'Hard' : hr >= 130 ? 'Moderate' : 'Easy';
+        const cls    = hr >= 145 ? 'effort-hard' : hr >= 130 ? 'effort-moderate' : 'effort-easy';
+        return `<tr>
+          <td>${fmtDate(r.date)}</td>
+          <td>${r.distance || '—'}</td>
+          <td>${r.duration || '—'}</td>
+          <td>${hr !== '—' ? hr + ' bpm' : '—'}</td>
+          <td>${r.active_cal || '—'}</td>
+          <td><span class="effort-pill ${cls}">${effort}</span></td>
+        </tr>`;
+      }).join('') : `<tr><td colspan="6" style="text-align:center;padding:16px;color:var(--muted)">No cardio sessions found</td></tr>`;
+    }
+
+    // History distance chart
+    if (charts.distanceH) {
+      charts.distanceH.data.labels = allCardio.map(r => fmtDate(r.date));
+      charts.distanceH.data.datasets[0].data = allCardio.map(r => parseFloat(r.distance) || 0);
+      charts.distanceH.update();
+    }
+
+    // History meal breakdown table — all meals
+    const allMeals = data.meals
+      .filter(r => r.date)
+      .sort((a,b) => (a.date||'').localeCompare(b.date||''));
+
+    const mealBodyH = document.getElementById('mealBreakdownBodyH');
+    if (mealBodyH) {
+      const mealTypeClass = { breakfast:'meal-breakfast', lunch:'meal-lunch', dinner:'meal-dinner', snack:'meal-snack' };
+      const mealTypeLabel = { breakfast:'Breakfast', lunch:'Lunch', dinner:'Dinner', snack:'Snack' };
+      // Group by date for daily totals
+      const byDayH = {};
+      allMeals.forEach(m => {
+        const d = m.date.slice(0,10);
+        if (!byDayH[d]) byDayH[d] = { cal:0, protein:0, carbs:0, fat:0, meals:[] };
+        byDayH[d].cal     += m.calories || 0;
+        byDayH[d].protein += m.protein  || 0;
+        byDayH[d].carbs   += m.carbs    || 0;
+        byDayH[d].fat     += m.fat      || 0;
+        byDayH[d].meals.push(m);
+      });
+      let html = '';
+      Object.keys(byDayH).sort().forEach(day => {
+        byDayH[day].meals.forEach(m => {
+          const type  = (m.meal_type||'').toLowerCase();
+          const cls   = mealTypeClass[type] || 'meal-snack';
+          const label = mealTypeLabel[type] || m.meal_type || '—';
+          html += `<tr>
+            <td>${fmtDate(day)}</td>
+            <td>${m.name || '—'}</td>
+            <td><span class="meal-pill ${cls}">${label}</span></td>
+            <td style="text-align:right">${m.calories ?? '—'}</td>
+            <td style="text-align:right">${m.protein  != null ? m.protein  + 'g' : '—'}</td>
+            <td style="text-align:right">${m.carbs    != null ? m.carbs    + 'g' : '—'}</td>
+            <td style="text-align:right">${m.fat      != null ? m.fat      + 'g' : '—'}</td>
+          </tr>`;
+        });
+        html += `<tr style="background:#f9fafb; font-weight:600;">
+          <td colspan="3" style="text-align:right; color:#6b7280; font-size:12px;">${fmtDate(day)} Total</td>
+          <td style="text-align:right">${byDayH[day].cal}</td>
+          <td style="text-align:right">${byDayH[day].protein}g</td>
+          <td style="text-align:right">${byDayH[day].carbs}g</td>
+          <td style="text-align:right">${byDayH[day].fat}g</td>
+        </tr>`;
+      });
+      mealBodyH.innerHTML = html || `<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--muted);">No meals found.</td></tr>`;
+    }
+
+    // History strength table — all exercises
+    const strengthBodyH = document.getElementById('strengthBodyH');
+    if (strengthBodyH) {
+      const rows = (data.strength || []).filter(r => r.date).sort((a,b) => a.date.localeCompare(b.date));
+      strengthBodyH.innerHTML = rows.length ? rows.map(r => `<tr>
+        <td>${fmtDate(r.date)}</td>
+        <td>${r.workout_type || '—'}</td>
+        <td>${r.exercise || '—'}</td>
+        <td>${r.sets ?? '—'}</td>
+        <td>${r.reps ?? '—'}</td>
+        <td>${r.weight != null ? r.weight + ' lbs' : '—'}</td>
+        <td>${r.difficulty || ''}</td>
+      </tr>`).join('') : `<tr><td colspan="7" style="text-align:center;padding:16px;color:var(--muted)">No strength training found</td></tr>`;
+    }
+
+    // History nutrition charts — all days
+    if (charts.caloriesH) {
+      const allDays = [...new Set(allMeals.map(m => m.date.slice(0,10)))].sort();
+      const byDayAll = {};
+      allMeals.forEach(m => {
+        const d = m.date.slice(0,10);
+        if (!byDayAll[d]) byDayAll[d] = { cal:0, protein:0, carbs:0, fat:0 };
+        byDayAll[d].cal     += m.calories || 0;
+        byDayAll[d].protein += m.protein  || 0;
+        byDayAll[d].carbs   += m.carbs    || 0;
+        byDayAll[d].fat     += m.fat      || 0;
+      });
+      charts.caloriesH.data.labels = allDays.map(fmtDate);
+      charts.caloriesH.data.datasets[0].data = allDays.map(d => byDayAll[d].cal);
+      charts.caloriesH.data.datasets[1].data = allDays.map(() => 2500);
+      charts.caloriesH.update();
+    }
+    if (charts.macrosH) {
+      const allDays = [...new Set(allMeals.map(m => m.date.slice(0,10)))].sort();
+      const byDayAll = {};
+      allMeals.forEach(m => {
+        const d = m.date.slice(0,10);
+        if (!byDayAll[d]) byDayAll[d] = { cal:0, protein:0, carbs:0, fat:0 };
+        byDayAll[d].protein += m.protein || 0;
+        byDayAll[d].carbs   += m.carbs   || 0;
+        byDayAll[d].fat     += m.fat     || 0;
+      });
+      charts.macrosH.data.labels = allDays.map(fmtDate);
+      charts.macrosH.data.datasets[0].data = allDays.map(d => byDayAll[d].protein);
+      charts.macrosH.data.datasets[1].data = allDays.map(d => byDayAll[d].carbs);
+      charts.macrosH.data.datasets[2].data = allDays.map(d => byDayAll[d].fat);
+      charts.macrosH.update();
+    }
+
+    // History BP chart — all readings
+    if (charts.bpH) {
+      charts.bpH.data.labels = bp.map(r => fmtDate(r.date));
+      charts.bpH.data.datasets[0].data = bp.map(r => r.systolic);
+      charts.bpH.data.datasets[1].data = bp.map(r => r.diastolic);
+      charts.bpH.data.datasets[2].data = bp.map(() => 120);
+      charts.bpH.update();
+    }
+
+    // ── Coaching Narrative — generated from last full Mon–Sun week ───────────
+    generateCoachingNarrative(data);
+  }
+
+  // ── Coaching Narrative Generator ─────────────────────────────────────────
+  function generateCoachingNarrative(data) {
+    const now = data.generated_at ? new Date(data.generated_at) : new Date();
+    const nyNowParts = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'America/New_York',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).formatToParts(now).reduce((acc, p) => {
+      if (p.type !== 'literal') acc[p.type] = p.value;
+      return acc;
+    }, {});
+    const nyToday = new Date(`${nyNowParts.year}-${nyNowParts.month}-${nyNowParts.day}T12:00:00`);
+    const dow = nyToday.getDay(); // 0=Sun
+    const daysFromMon = (dow + 6) % 7; // Mon=0 … Sun=6
+
+    const currentMon = new Date(nyToday);
+    currentMon.setDate(nyToday.getDate() - daysFromMon);
+
+    const lastSun = new Date(currentMon);
+    lastSun.setDate(currentMon.getDate() - 1);
+
+    const lastMon = new Date(lastSun);
+    lastMon.setDate(lastSun.getDate() - 6);
+
+    const weekStart = lastMon.toISOString().slice(0,10);
+    const weekEnd   = lastSun.toISOString().slice(0,10);
+
+    const fmt = d => new Date(d + 'T12:00:00').toLocaleDateString('en-US', {month:'short', day:'numeric'});
+    const fmtYear = d => new Date(d + 'T12:00:00').toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'});
+    const weekLabel = `${fmt(weekStart)}–${fmtYear(weekEnd)}`;
+    const dateKey = d => (d || '').slice(0, 10);
+
+    const titleEl = document.getElementById('narrativeSectionTitle');
+    if (titleEl) titleEl.textContent = `Coaching Narrative — Week of ${weekLabel}`;
+
+    const weekLabelEl = document.getElementById('narrativeWeekLabel');
+    if (weekLabelEl) weekLabelEl.textContent = `Based on your Notion logs · ${weekLabel}`;
+
+    // Filter to last full week
+    const bpData = (data.blood_pressure || [])
+      .filter(r => dateKey(r.date) >= weekStart && dateKey(r.date) <= weekEnd && r.systolic && r.diastolic)
+      .sort((a,b) => dateKey(a.date).localeCompare(dateKey(b.date)));
+
+    const cardioData = (data.cardio || [])
+      .filter(r => dateKey(r.date) >= weekStart && dateKey(r.date) <= weekEnd)
+      .sort((a,b) => dateKey(a.date).localeCompare(dateKey(b.date)));
+
+    const strengthData = (data.strength || [])
+      .filter(r => dateKey(r.date) >= weekStart && dateKey(r.date) <= weekEnd)
+      .sort((a,b) => dateKey(a.date).localeCompare(dateKey(b.date)));
+
+    const mealsData = (data.meals || [])
+      .filter(r => dateKey(r.date) >= weekStart && dateKey(r.date) <= weekEnd);
+
+    // BP stats
+    const avgSys = bpData.length ? Math.round(bpData.reduce((s,r) => s+r.systolic, 0) / bpData.length) : null;
+    const avgDia = bpData.length ? Math.round(bpData.reduce((s,r) => s+r.diastolic, 0) / bpData.length) : null;
+    const bpDelta = bpData.length >= 2 ? bpData[bpData.length-1].systolic - bpData[0].systolic : 0;
+    const bpStage = !avgSys ? 'unknown'
+      : (avgSys >= 140 || avgDia >= 90) ? 'Stage 2'
+      : (avgSys >= 130 || avgDia >= 80) ? 'Stage 1'
+      : (avgSys >= 120) ? 'Elevated' : 'Normal';
+
+    // Cardio stats
+    const cardioCount = cardioData.length;
+    const totalMiles = cardioData.reduce((s,r) => s + (parseFloat(r.distance)||0), 0);
+    const totalCardioCal = cardioData.reduce((s,r) => s + (r.active_cal||0), 0);
+    const hrReadings = cardioData.filter(r => r.avg_hr);
+    const avgHR = hrReadings.length ? Math.round(hrReadings.reduce((s,r) => s+r.avg_hr, 0) / hrReadings.length) : null;
+
+    // Strength stats
+    const strengthDays = [...new Set(strengthData.map(r => dateKey(r.date)))];
+    const workoutTypes = [...new Set(strengthData.map(r => r.workout_type).filter(Boolean))];
+
+    // Nutrition stats
+    const mealsByDay = {};
+    mealsData.forEach(r => {
+      const d = dateKey(r.date);
+      if (!mealsByDay[d]) mealsByDay[d] = {cal:0, protein:0, carbs:0, fat:0, count:0};
+      mealsByDay[d].cal     += r.calories || 0;
+      mealsByDay[d].protein += r.protein  || 0;
+      mealsByDay[d].carbs   += r.carbs    || 0;
+      mealsByDay[d].fat     += r.fat      || 0;
+      mealsByDay[d].count   += 1;
+    });
+    const loggedDayKeys = Object.keys(mealsByDay);
+    const loggedCount = loggedDayKeys.length;
+    const totalMealCount = mealsData.length;
+    const dayVals = Object.values(mealsByDay);
+    const avgCal  = loggedCount ? Math.round(dayVals.reduce((s,d) => s+d.cal, 0) / loggedCount) : 0;
+    const avgProt = loggedCount ? Math.round(dayVals.reduce((s,d) => s+d.protein, 0) / loggedCount) : 0;
+    const avgCarbs = loggedCount ? Math.round(dayVals.reduce((s,d) => s+d.carbs, 0) / loggedCount) : 0;
+    const avgFat  = loggedCount ? Math.round(dayVals.reduce((s,d) => s+d.fat, 0) / loggedCount) : 0;
+    const bestProtEntry = loggedCount
+      ? Object.entries(mealsByDay).sort((a,b) => b[1].protein - a[1].protein)[0]
+      : null;
+
+    // Build narrative paragraph
+    let narrativeText = '';
+
+    if (bpData.length === 0) {
+      narrativeText += 'Blood pressure had 0 readings this week, so there is no average or trend to interpret. ';
+    } else if (bpData.length === 1) {
+      narrativeText += `Blood pressure averaged ${avgSys}/${avgDia} from 1 reading (${bpData[0].systolic}/${bpData[0].diastolic} on ${fmt(dateKey(bpData[0].date))}) — ${bpStage} range, with trend unavailable until there are multiple readings. `;
+    } else {
+      const trend = bpDelta <= -5 ? 'trending down' : bpDelta >= 5 ? 'trending up' : 'holding steady';
+      narrativeText += `Blood pressure averaged ${avgSys}/${avgDia} across ${bpData.length} readings — ${bpStage}, ${trend}. `;
+      if (bpDelta <= -5) narrativeText += `The ${Math.abs(bpDelta)}-point drop in systolic over the week is real — it tracks directly with the activity pattern. `;
+    }
+
+    if (cardioCount === 0) {
+      narrativeText += 'Cardio logged 0 sessions, 0.0 miles, 0 active calories, and no average HR. ';
+    } else if (cardioCount >= 5) {
+      narrativeText += `Cardio was strong: ${cardioCount} sessions, ${totalMiles.toFixed(1)} miles, ${totalCardioCal.toLocaleString()} active calories${avgHR ? ', and ' + avgHR + ' bpm average HR' : ', with no HR readings logged'}. `;
+    } else if (cardioCount >= 3) {
+      narrativeText += `Cardio reached ${cardioCount} sessions, ${totalMiles.toFixed(1)} miles, ${totalCardioCal.toLocaleString()} active calories${avgHR ? ', and ' + avgHR + ' bpm average HR' : ', with no HR readings logged'}. `;
+    } else {
+      narrativeText += `Cardio logged ${cardioCount} session${cardioCount > 1 ? 's' : ''}, ${totalMiles.toFixed(1)} miles, ${totalCardioCal.toLocaleString()} active calories${avgHR ? ', and ' + avgHR + ' bpm average HR' : ', with no HR readings logged'} — short of the 4–5 session weekly target. `;
+    }
+
+    if (strengthDays.length === 0) {
+      narrativeText += 'Strength training completion was 0/3 days with 0 logged sets. ';
+    } else if (strengthDays.length >= 3) {
+      narrativeText += `Strength hit the target: ${strengthDays.length}/3 days completed with ${strengthData.length} logged sets${workoutTypes.length ? ' (' + workoutTypes.join(', ') + ')' : ''}. `;
+    } else {
+      narrativeText += `Strength training completion was ${strengthDays.length}/3 days with ${strengthData.length} logged sets${workoutTypes.length ? ' (' + workoutTypes.join(', ') + ')' : ''} — ${3 - strengthDays.length} day${3 - strengthDays.length > 1 ? 's' : ''} short of the weekly goal. `;
+    }
+
+    if (loggedCount === 0) {
+      narrativeText += 'Nutrition logging was 0/7 days and 0 meals, so weekly macro averages are unavailable.';
+    } else {
+      narrativeText += `Nutrition logging covered ${loggedCount}/7 days (${totalMealCount} meals), averaging ${avgCal.toLocaleString()} cal, ${avgProt}g protein, ${avgCarbs}g carbs, and ${avgFat}g fat on logged days. `;
+      if (avgProt < 140) narrativeText += `Protein is well below the 175g target — the gap needs closing.`;
+      else if (avgProt < 165) narrativeText += `Protein is improving but still short of the 175g target.`;
+      else narrativeText += `Protein is on track against the 175g target.`;
+    }
+
+    const narrativeEl = document.getElementById('narrativeText');
+    if (narrativeEl) {
+      narrativeEl.style.color = '';
+      narrativeEl.style.fontStyle = '';
+      narrativeEl.textContent = narrativeText;
+    }
+
+    // Build advice cards
+    const gridEl = document.getElementById('narrativeAdviceGrid');
+    if (gridEl) {
+      gridEl.innerHTML = [
+        _narrativeBPCard(bpData, avgSys, avgDia, bpDelta, bpStage, fmt),
+        _narrativeStrengthCard(strengthDays, workoutTypes, strengthData.length, fmt),
+        _narrativeNutritionCard(loggedCount, totalMealCount, avgCal, avgProt, avgCarbs, avgFat, bestProtEntry, fmt),
+        _narrativeCardioCard(cardioData, cardioCount, totalMiles, totalCardioCal, avgHR, weekStart, weekEnd, fmt),
+      ].join('');
+    }
+  }
+
+  function _narrativeBPCard(bpData, avgSys, avgDia, bpDelta, bpStage, fmt) {
+    if (!bpData.length) return `<div class="advice-card">
+      <div class="ac-icon">🩺</div>
+      <div class="ac-title">Blood Pressure - No Weekly Average</div>
+      <div class="ac-body"><ul>
+        <li>0 readings were logged, so the week has no average and no trend.</li>
+        <li><strong>Action:</strong> sit quietly for 5 minutes, take one morning reading, and log it before caffeine.</li>
+        <li>Aim for 5+ readings this week so BP can become a trend, not a guess.</li>
+      </ul></div></div>`;
+
+    const readingItems = bpData.slice(-4).map(r =>
+      `<li>${fmt((r.date || '').slice(0,10))}: ${r.systolic}/${r.diastolic}${r.pulse ? ' · ' + r.pulse + ' bpm' : ''}</li>`
+    ).join('');
+
+    const trendLine = bpData.length >= 2
+      ? (bpDelta <= -5
+          ? `<li>Systolic dropped ${Math.abs(bpDelta)} pts over the week — that improvement tracks with activity. Protect the streak.</li>`
+          : bpDelta >= 5
+          ? `<li>Systolic climbed ${bpDelta} pts — review sodium intake and stress on the days it spiked.</li>`
+          : '<li>Readings held steady across the week.</li>')
+      : '<li>Only one reading was logged, so trend is unavailable. The next priority is measurement consistency.</li>';
+
+    const advice = bpStage === 'Stage 2'
+      ? '<li><strong>Priority:</strong> daily seated readings, every morning. Keep sodium conservative on restaurant days and use BP as the weekly scorecard.</li>'
+      : bpStage === 'Stage 1'
+      ? '<li><strong>Priority:</strong> keep activity frequency high and collect 5+ readings to confirm whether this is improving.</li>'
+      : '<li><strong>Priority:</strong> maintain morning readings, daily activity, and protein-first meals.</li>';
+
+    const title = bpData.length === 1 ? `Blood Pressure - ${bpStage}, Need More Readings`
+      : bpStage === 'Stage 2' ? 'Blood Pressure - Stage 2, Watch the Trend'
+      : bpStage === 'Stage 1' ? 'Blood Pressure - Stage 1, Build the Trend'
+      : bpStage === 'Elevated' ? 'Blood Pressure - Elevated, Keep Measuring'
+      : 'Blood Pressure - Normal Range';
+
+    return `<div class="advice-card">
+      <div class="ac-icon">🩺</div>
+      <div class="ac-title">${title}</div>
+      <div class="ac-body"><ul>
+        <li><strong>Week avg: ${avgSys}/${avgDia}</strong> — ${bpStage}, based on ${bpData.length} reading${bpData.length > 1 ? 's' : ''}.</li>
+        ${readingItems}${trendLine}${advice}
+      </ul></div></div>`;
+  }
+
+  function _narrativeStrengthCard(strengthDays, workoutTypes, strengthSetCount, fmt) {
+    if (!strengthDays.length) return `<div class="advice-card">
+      <div class="ac-icon">🏋️</div>
+      <div class="ac-title">Strength - 0 of 3 Days</div>
+      <div class="ac-body"><ul>
+        <li>0 strength days and 0 logged sets this week.</li>
+        <li>The weekly floor is 3 sessions. Muscle maintenance supports metabolic health and BP management.</li>
+        <li><strong>This week:</strong> schedule Mon / Wed / Fri before choosing exercises.</li>
+      </ul></div></div>`;
+
+    const typesLine = workoutTypes.length
+      ? `<li>Types covered: ${workoutTypes.join(', ')}.</li>`
+      : '';
+
+    if (strengthDays.length >= 3) return `<div class="advice-card">
+      <div class="ac-icon">🏋️</div>
+      <div class="ac-title">Strength - Weekly Target Complete</div>
+      <div class="ac-body"><ul>
+        <li>${strengthDays.length}/3 strength days completed with ${strengthSetCount} logged sets — weekly target hit.</li>
+        ${typesLine}
+        <li>This is the template to repeat. Keep consistency ahead of intensity while BP remains elevated.</li>
+        <li><strong>Next:</strong> keep the split intact and add load only after 3 consecutive complete weeks.</li>
+      </ul></div></div>`;
+
+    const missed = 3 - strengthDays.length;
+    return `<div class="advice-card">
+      <div class="ac-icon">🏋️</div>
+      <div class="ac-title">Strength - ${strengthDays.length} of 3 Days Completed</div>
+      <div class="ac-body"><ul>
+        <li>${strengthDays.length}/3 strength days completed with ${strengthSetCount} logged sets — ${missed} day${missed > 1 ? 's' : ''} short of the target.</li>
+        ${typesLine}
+        <li>Muscle maintenance is protective while the cardio routine builds. Three sessions is the floor.</li>
+        <li><strong>This week:</strong> schedule all three days in advance. If time is tight, use full-body sessions instead of waiting for the perfect split.</li>
+      </ul></div></div>`;
+  }
+
+  function _narrativeNutritionCard(loggedCount, totalMealCount, avgCal, avgProt, avgCarbs, avgFat, bestProtEntry, fmt) {
+    if (!loggedCount) return `<div class="advice-card">
+      <div class="ac-icon">🥩</div>
+      <div class="ac-title">Nutrition - No Logged Days</div>
+      <div class="ac-body"><ul>
+        <li>0/7 days and 0 meals were logged, so calorie and macro averages are unavailable.</li>
+        <li>Even rough estimates give more signal than blank days.</li>
+        <li><strong>Start now:</strong> log today's meals in Notion before the day gets away from you.</li>
+      </ul></div></div>`;
+
+    const protGap = 175 - avgProt;
+    const protLine = protGap > 20
+      ? `<li>Protein at ${avgProt}g/day — ${protGap}g short of the 175g target. Front-load 40–60g by lunch so dinner does not have to rescue the day.</li>`
+      : protGap > 5
+      ? `<li>Protein at ${avgProt}g/day — close to 175g but not there. One high-protein breakfast closes most of the gap.</li>`
+      : `<li>Protein solid at ${avgProt}g/day — on track against the 175g target.</li>`;
+
+    const calLine = avgCal > 2700
+      ? `<li>Calories averaging ${avgCal.toLocaleString()}/day — above the 2,500 target. Reduce takeout portions or add protein-dense lower-calorie meals.</li>`
+      : avgCal > 0
+      ? `<li>Averages: ${avgCal.toLocaleString()} cal · ${avgProt}g protein · ${avgCarbs}g carbs · ${avgFat}g fat.</li>`
+      : '';
+
+    const loggingLine = loggedCount < 5
+      ? `<li>${loggedCount}/7 days logged (${totalMealCount} meals) — ${7 - loggedCount} gap${7 - loggedCount > 1 ? 's' : ''}. Log before eating, not after.</li>`
+      : `<li>${loggedCount}/7 days logged (${totalMealCount} meals) — strong accountability signal.</li>`;
+
+    const bestLine = bestProtEntry
+      ? `<li>Best day: ${fmt(bestProtEntry[0])} at ${bestProtEntry[1].protein}g protein — repeat that structure with leaner defaults.</li>`
+      : '';
+
+    const cardTitle = loggedCount < 5 ? 'Nutrition - Logging Gaps, Protein Short'
+      : loggedCount >= 6 ? (protGap > 20 ? 'Nutrition - Good Logging, Protein Gap' : 'Nutrition - Strong Week')
+      : 'Nutrition - Solid Logging';
+
+    return `<div class="advice-card">
+      <div class="ac-icon">🥩</div>
+      <div class="ac-title">${cardTitle}</div>
+      <div class="ac-body"><ul>
+        ${loggingLine}${calLine}${protLine}${bestLine}
+      </ul></div></div>`;
+  }
+
+  function _narrativeCardioCard(cardioData, cardioCount, totalMiles, totalCardioCal, avgHR, weekStart, weekEnd, fmt) {
+    if (!cardioCount) return `<div class="advice-card">
+      <div class="ac-icon">🏃</div>
+      <div class="ac-title">Cardio - 0 Sessions</div>
+      <div class="ac-body"><ul>
+        <li>0 sessions, 0.0 miles, 0 active calories, and no HR data were logged.</li>
+        <li>The goal is frequency first. A 20-minute walk counts and accumulates.</li>
+        <li><strong>This week:</strong> walk every day, then let mileage build naturally.</li>
+      </ul></div></div>`;
+
+    const sessionItems = cardioData.map(r =>
+      `<li>${fmt((r.date || '').slice(0,10))}: ${r.distance ? r.distance : '—'}${r.active_cal ? ', ' + r.active_cal + ' active cal' : ''}${r.avg_hr ? ', ' + r.avg_hr + ' bpm' : ''}</li>`
+    ).join('');
+
+    const hrLine = avgHR
+      ? `<li>Average HR was ${avgHR} bpm across sessions with HR data — ${avgHR >= 145 ? 'hard effort, strong cardiovascular load' : avgHR >= 130 ? 'moderate effort, right in the aerobic zone' : 'easy pace, good for daily consistency'}.</li>`
+      : '<li>No sessions included average HR data, so intensity needs better tracking.</li>';
+
+    // Check for gaps (consecutive missed days)
+    const allDays = [];
+    let cur = new Date(weekStart + 'T12:00:00');
+    const endD = new Date(weekEnd + 'T12:00:00');
+    while (cur <= endD) { allDays.push(cur.toISOString().slice(0,10)); cur.setDate(cur.getDate()+1); }
+    const missedCount = allDays.filter(d => !cardioData.find(r => (r.date || '').slice(0,10) === d)).length;
+    const gapLine = missedCount > 3
+      ? `<li>${missedCount} days without cardio — keep gaps to 1 day max when BP is elevated.</li>`
+      : cardioCount >= 5
+      ? '<li>Near-daily consistency — this frequency is what moves the BP needle.</li>'
+      : '<li>Aim to add one more session next week. The BP benefit compounds with frequency.</li>';
+
+    const title = cardioCount >= 5 ? 'Cardio - Excellent Frequency'
+      : cardioCount >= 4 ? 'Cardio - Good Week'
+      : cardioCount >= 3 ? 'Cardio - Adequate, Add Frequency'
+      : `Cardio - ${cardioCount} Session${cardioCount > 1 ? 's' : ''}, Needs More`;
+
+    return `<div class="advice-card">
+      <div class="ac-icon">🏃</div>
+      <div class="ac-title">${title}</div>
+      <div class="ac-body"><ul>
+        <li>${cardioCount} session${cardioCount > 1 ? 's' : ''}: ${totalMiles.toFixed(1)} miles, ${totalCardioCal.toLocaleString()} active calories.</li>
+        ${sessionItems}${hrLine}${gapLine}
+      </ul></div></div>`;
+  }
+
+  function fmtDate(iso) {
+    if (!iso) return '—';
+    const d = new Date(iso + 'T12:00:00');
+    return d.toLocaleDateString('en-US', { month:'short', day:'numeric' });
+  }
+
+  // Spinner CSS
+  const style = document.createElement('style');
+  style.textContent = '@keyframes spin { to { transform: rotate(360deg); } }';
+  document.head.appendChild(style);
+
+  // ── Macro Targets ────────────────────────────────────────────────────────
+  const MACRO_TARGETS = { calories: 2500, protein: 175, carbs: 280, fat: 75 };
+
+  // Seed with the most recent logged day (Apr 22, partial)
+  let latestMacros = { calories: 720, protein: 61, carbs: 54, fat: 30, label: 'Apr 22 — day in progress' };
+
+  function buildMacroTargets() {
+    const d = latestMacros;
+    const container = document.getElementById('macroTargets');
+    if (!container) return;
+    const dateEl = document.getElementById('macroTargetDate');
+    if (dateEl) dateEl.textContent = `Showing: ${d.label} — hit Refresh to update with live Notion data`;
+
+    const items = [
+      { key: 'calories', label: 'Calories', unit: ' cal', color: '#10b981' },
+      { key: 'protein',  label: 'Protein',  unit: 'g',    color: '#3b82f6' },
+      { key: 'carbs',    label: 'Carbs',    unit: 'g',    color: '#f59e0b' },
+      { key: 'fat',      label: 'Fat',      unit: 'g',    color: '#ec4899' },
+    ];
+
+    container.innerHTML = items.map(item => {
+      const actual = d[item.key] || 0;
+      const target = MACRO_TARGETS[item.key];
+      const pct    = Math.min(100, Math.round(actual / target * 100));
+      const isOver = actual > target * 1.1;
+      const isLow  = pct < 70;
+      const cls    = isOver ? 'status-over' : isLow ? 'status-warn' : 'status-good';
+      const msg    = isOver
+        ? `${pct}% — Over target`
+        : isLow
+          ? `${pct}% — Below target`
+          : `${pct}% — On track`;
+      return `
+      <div class="target-row">
+        <div class="target-label">
+          <span class="target-name">${item.label}</span>
+          <span class="target-nums">${actual.toLocaleString()}${item.unit} / ${target.toLocaleString()}${item.unit}</span>
+        </div>
+        <div class="target-bar-wrap">
+          <div class="target-bar" style="width:${pct}%; background:${item.color};"></div>
+        </div>
+        <span class="target-status ${cls}">${msg}</span>
+      </div>`;
+    }).join('');
+  }
+
+  const days = ['Apr 20', 'Apr 20 (2)', 'Apr 21', 'Apr 22'];
+
+  // Distance chart — current week sessions (hit Refresh for full week)
+  charts.distance = new Chart(document.getElementById('distanceChart'), {
+    type: 'bar',
+    data: {
+      labels: days,
+      datasets: [{
+        label: 'Miles',
+        data: [2.13, 1.94, 2.65, 0.71],
+        backgroundColor: ['#3b82f6bb','#3b82f699','#3b82f6dd','#3b82f655'],
+        borderColor: ['#3b82f6','#3b82f6','#3b82f6','#3b82f6'],
+        borderWidth: 2,
+        borderRadius: 8,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: ctx => ` ${ctx.parsed.y} miles`
+          }
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          max: 3,
+          grid: { color: '#f3f4f6' },
+          ticks: { callback: v => v + ' mi' }
+        },
+        x: { grid: { display: false } }
+      }
+    }
+  });
+
+  // Calories chart
+  const calDays = ['Apr 19', 'Apr 20', 'Apr 21', 'Apr 22', 'Apr 23', 'Apr 24', 'Apr 25'];
+  charts.calories = new Chart(document.getElementById('caloriesChart'), {
+    type: 'bar',
+    data: {
+      labels: calDays,
+      datasets: [{
+        label: 'Calories',
+        data: [1312, 1937, 1320, 720, null, null, null],
+        backgroundColor: [
+          '#f59e0b66','#10b98166','#f59e0b66','#6366f166','#e5e7eb66','#e5e7eb66','#e5e7eb66'
+        ],
+        borderColor: [
+          '#f59e0b','#10b981','#f59e0b','#6366f1','#e5e7eb','#e5e7eb','#e5e7eb'
+        ],
+        borderWidth: 2,
+        borderRadius: 8,
+      }, {
+        label: 'Target (2,500 cal)',
+        data: [2500, 2500, 2500, 2500, 2500, 2500, 2500],
+        type: 'line',
+        borderColor: '#6366f1',
+        borderDash: [5, 4],
+        borderWidth: 2,
+        pointRadius: 0,
+        fill: false,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          display: true,
+          labels: { boxWidth: 12, font: { size: 11 } }
+        },
+        tooltip: {
+          callbacks: {
+            label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y} cal`
+          }
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: false,
+          min: 500,
+          max: 2800,
+          grid: { color: '#f3f4f6' },
+          ticks: { callback: v => v + ' cal' }
+        },
+        x: { grid: { display: false } }
+      }
+    }
+  });
+
+  // Macros stacked bar
+  charts.macros = new Chart(document.getElementById('macrosChart'), {
+    type: 'bar',
+    data: {
+      labels: calDays,
+      datasets: [
+        {
+          label: 'Protein (g)',
+          data: [85, 101, 70, 61, null, null, null],
+          backgroundColor: '#3b82f6bb',
+          borderRadius: 4,
+        },
+        {
+          label: 'Carbs (g)',
+          data: [159, 225, 140, 54, null, null, null],
+          backgroundColor: '#f59e0bbb',
+          borderRadius: 4,
+        },
+        {
+          label: 'Fat (g)',
+          data: [35, 72, 57, 30, null, null, null],
+          backgroundColor: '#ef4444bb',
+          borderRadius: 4,
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          display: true,
+          labels: { boxWidth: 12, font: { size: 11 } }
+        }
+      },
+      scales: {
+        y: {
+          stacked: true,
+          grid: { color: '#f3f4f6' },
+          ticks: { callback: v => v + 'g' }
+        },
+        x: {
+          stacked: true,
+          grid: { display: false }
+        }
+      }
+    }
+  });
+
+  // BP chart
+  const bpDates = ['Jun 4', 'Jun 9', 'Jun 10', 'Jun 23', 'Jun 25', 'Jul 2', 'Apr 24', 'Apr 26', 'Apr 27', 'Apr 29', 'May 1', 'May 2', 'May 4'];
+  const systolic = [168, 151, 154, 146, 152, 132, 144, 174, 154, 145, 147, 168, 149];
+  const diastolic = [106, 95, 97, 99, 96, 93, 94, 104, 97, 96, 93, 93, 94];
+  charts.bp = new Chart(document.getElementById('bpChart'), {
+    type: 'line',
+    data: {
+      labels: bpDates,
+      datasets: [
+        {
+          label: 'Systolic',
+          data: systolic,
+          borderColor: '#ef4444',
+          backgroundColor: '#ef444422',
+          fill: true,
+          tension: 0.3,
+          pointRadius: 5,
+          pointBackgroundColor: '#ef4444',
+        },
+        {
+          label: 'Diastolic',
+          data: diastolic,
+          borderColor: '#f59e0b',
+          backgroundColor: '#f59e0b11',
+          fill: false,
+          tension: 0.3,
+          pointRadius: 5,
+          pointBackgroundColor: '#f59e0b',
+        },
+        {
+          label: 'Normal systolic (120)',
+          data: [120, 120, 120, 120, 120, 120],
+          borderColor: '#10b981',
+          borderDash: [4, 4],
+          borderWidth: 1.5,
+          pointRadius: 0,
+          fill: false,
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          display: true,
+          labels: { boxWidth: 12, font: { size: 11 } }
+        },
+        tooltip: {
+          callbacks: {
+            label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y} mmHg`
+          }
+        }
+      },
+      scales: {
+        y: {
+          min: 80,
+          max: 185,
+          grid: { color: '#f3f4f6' },
+          ticks: { callback: v => v + ' mmHg' }
+        },
+        x: { grid: { display: false } }
+      }
+    }
+  });
+
+  // ─── MEAL PLAN DATA ──────────────────────────────────────────────────────
+  const mealPlan = [
+    {
+      day: 'Monday, May 4', cal: 1500, protein: 138,
+      meals: [
+        { type: 'breakfast', name: 'Greek yogurt + granola', notes: 'Greek yogurt, granola — logged', cal: 270, p: 18, c: 35, f: 6 },
+        { type: 'lunch',     name: 'Turkey bacon, avocado, tomato, lettuce, pickle', notes: 'Sandwich on whole wheat — logged', cal: 430, p: 31, c: 34, f: 18 },
+        { type: 'dinner',    name: 'Grilled chicken breast + broccoli', notes: '8 oz chicken, 1.5 cups steamed broccoli, ½ cup brown rice', cal: 580, p: 55, c: 20, f: 14 },
+        { type: 'snack',     name: 'Whey Protein Shake', notes: '1 scoop with water', cal: 120, p: 25, c: 2, f: 1.5 },
+        { type: 'snack',     name: 'Chomps Beef Stick', notes: '1 stick', cal: 100, p: 9, c: 0, f: 6 },
+      ]
+    },
+    {
+      day: 'Tuesday, May 5', cal: 1510, protein: 142,
+      meals: [
+        { type: 'breakfast', name: 'Egg whites + Lean Turkey', notes: '6 egg whites, 4oz lean turkey breast, spinach', cal: 280, p: 48, c: 6, f: 5 },
+        { type: 'lunch',     name: 'Turkey & avocado on whole wheat', notes: '8 oz turkey, ½ avocado, 1 slice whole wheat', cal: 430, p: 31, c: 34, f: 18 },
+        { type: 'dinner',    name: 'Spicy Sausage & Pesto Pizza + Marinara Pizza', notes: 'Hungryroot — 580 cal label', cal: 580, p: 29, c: 65, f: 19 },
+        { type: 'snack',     name: 'Whey Protein Shake', notes: '1 scoop with water', cal: 120, p: 25, c: 2, f: 1.5 },
+        { type: 'snack',     name: 'Chomps Beef Stick', notes: '1 stick', cal: 100, p: 9, c: 0, f: 6 },
+      ]
+    },
+    {
+      day: 'Wednesday, May 6', cal: 1750, protein: 164,
+      meals: [
+        { type: 'breakfast', name: 'Cottage cheese & Protein Powder', notes: '1 cup cottage cheese mixed with ½ scoop whey', cal: 320, p: 42, c: 15, f: 6 },
+        { type: 'lunch',     name: 'Grilled chicken salad', notes: '10 oz chicken, romaine, tomato, ½ avocado', cal: 500, p: 60, c: 12, f: 20 },
+        { type: 'dinner',    name: 'Grass-Fed Burger + Sweet Potato Fries', notes: 'Hungryroot — 720 cal label', cal: 720, p: 32, c: 83, f: 29 },
+        { type: 'snack',     name: 'Greek yogurt (plain)', notes: '¾ cup plain Greek yogurt', cal: 120, p: 18, c: 6, f: 0 },
+        { type: 'snack',     name: 'Beef Jerky', notes: '1 oz', cal: 90, p: 12, c: 3, f: 1 },
+      ]
+    },
+    {
+      day: 'Thursday, May 7', cal: 1670, protein: 196,
+      meals: [
+        { type: 'breakfast', name: 'Egg whites + turkey sausage', notes: '6 egg whites, 3 turkey breakfast sausage links', cal: 310, p: 42, c: 3, f: 12 },
+        { type: 'lunch',     name: 'Double tuna salad on whole wheat', notes: '2 cans tuna (in water), Greek yogurt, 1 slice bread', cal: 480, p: 72, c: 28, f: 8 },
+        { type: 'dinner',    name: 'Pesto Mozzarella Chicken Melts', notes: 'Hungryroot — 680 cal label', cal: 680, p: 50, c: 27, f: 42 },
+        { type: 'snack',     name: 'Whey Protein Shake', notes: '1 scoop with water', cal: 120, p: 25, c: 2, f: 1.5 },
+        { type: 'snack',     name: 'String cheese', notes: '1 stick', cal: 80, p: 7, c: 1, f: 5 },
+      ]
+    },
+    {
+      day: 'Friday, May 8', cal: 1870, protein: 205,
+      meals: [
+        { type: 'breakfast', name: 'Egg whites + Protein Toast', notes: '6 egg whites, 1 slice whole wheat, 4oz deli turkey', cal: 380, p: 52, c: 25, f: 10 },
+        { type: 'lunch',     name: 'Double Grilled chicken & rice bowl', notes: '10 oz chicken, ½ cup brown rice, black beans, salsa', cal: 680, p: 78, c: 45, f: 12 },
+        { type: 'dinner',    name: 'Salmon + broccoli', notes: '8 oz salmon, 2 cups steamed broccoli', cal: 580, p: 48, c: 15, f: 32 },
+        { type: 'snack',     name: 'Greek yogurt', notes: '¾ cup plain Greek yogurt', cal: 120, p: 18, c: 6, f: 0 },
+        { type: 'snack',     name: 'Beef stick', notes: '1 stick', cal: 110, p: 9, c: 1, f: 7 },
+      ]
+    },
+    {
+      day: 'Saturday, May 9', cal: 1880, protein: 226,
+      meals: [
+        { type: 'breakfast', name: 'Egg whites + turkey sausage', notes: '6 egg whites, 3 turkey sausage links, spinach', cal: 310, p: 42, c: 6, f: 12 },
+        { type: 'lunch',     name: 'Double Grilled chicken wrap', notes: '10 oz chicken, 1 whole wheat wrap, romaine, ½ avocado', cal: 720, p: 76, c: 42, f: 24 },
+        { type: 'dinner',    name: 'Homemade chicken fajitas', notes: '10 oz chicken, peppers, onion, salsa (no tortilla)', cal: 650, p: 76, c: 20, f: 18 },
+        { type: 'snack',     name: 'Whey Protein Shake', notes: '1 scoop', cal: 120, p: 25, c: 2, f: 1.5 },
+        { type: 'snack',     name: 'String cheese', notes: '1 stick', cal: 80, p: 7, c: 1, f: 5 },
+      ]
+    },
+    {
+      day: 'Sunday, May 10', cal: 1500, protein: 138,
+      meals: [
+        { type: 'breakfast', name: 'Greek yogurt + granola', notes: '¾ cup Greek yogurt, ¼ cup granola', cal: 270, p: 18, c: 35, f: 6 },
+        { type: 'lunch',     name: 'Turkey & avocado on whole wheat', notes: '8 oz turkey, ½ avocado, 1 slice whole wheat', cal: 430, p: 31, c: 34, f: 18 },
+        { type: 'dinner',    name: 'Grilled chicken breast + broccoli', notes: '8 oz chicken, 1.5 cups steamed broccoli, ½ cup brown rice', cal: 580, p: 55, c: 20, f: 14 },
+        { type: 'snack',     name: 'Whey Protein Shake', notes: '1 scoop with water', cal: 120, p: 25, c: 2, f: 1.5 },
+        { type: 'snack',     name: 'Chomps Beef Stick', notes: '1 stick', cal: 100, p: 9, c: 0, f: 6 },
+      ]
+    },
+  ];
+
+  const mealTypeClass = { breakfast: 'meal-breakfast', lunch: 'meal-lunch', dinner: 'meal-dinner', snack: 'meal-snack' };
+  const mealTypeLabel = { breakfast: 'Breakfast', lunch: 'Lunch', dinner: 'Dinner', snack: 'Snack' };
+
+  function getMealId(di, mi) { return `meal_${di}_${mi}`; }
+  function isChecked(id) { return localStorage.getItem(id) === '1'; }
+  function setChecked(id, val) { localStorage.setItem(id, val ? '1' : '0'); }
+
+  function buildMealPlan() {
+    const container = document.getElementById('mealPlan');
+    container.innerHTML = '';
+    mealPlan.forEach((day, di) => {
+      const total = day.meals.length;
+      const done = day.meals.filter((_, mi) => isChecked(getMealId(di, mi))).length;
+
+      const dayDiv = document.createElement('div');
+      dayDiv.className = 'plan-day';
+
+      dayDiv.innerHTML = `
+        <div class="plan-day-header">
+          <div class="day-label">${day.day}</div>
+          <div class="day-stats">
+            <span>🔥 ${day.cal} cal</span>
+            <span>💪 ${day.protein}g protein</span>
+          </div>
+          <div class="day-progress">${done}/${total} meals</div>
+        </div>
+        <div class="day-meals">
+          ${day.meals.map((meal, mi) => {
+            const id = getMealId(di, mi);
+            const checked = isChecked(id);
+            return `
+            <div class="meal-row ${checked ? 'checked' : ''}" id="row_${id}">
+              <input type="checkbox" id="${id}" ${checked ? 'checked' : ''} onchange="toggleMeal('${id}', ${di})">
+              <div class="meal-info">
+                <div class="meal-name">${meal.name}</div>
+                <div class="meal-meta">
+                  <span class="meal-pill ${mealTypeClass[meal.type]}">${mealTypeLabel[meal.type]}</span>
+                  &nbsp;${meal.notes}
+                </div>
+              </div>
+              <div class="meal-macros">
+                <div style="font-size:12px; font-weight:600; color:var(--text)">${meal.cal} cal</div>
+                <div>
+                  <span class="macro-chip chip-p">${meal.p}g P</span>
+                  <span class="macro-chip chip-c">${meal.c}g C</span>
+                  <span class="macro-chip chip-f">${meal.f}g F</span>
+                </div>
+              </div>
+            </div>`;
+          }).join('')}
+        </div>`;
+      container.appendChild(dayDiv);
+    });
+  }
+
+  function toggleMeal(id, di) {
+    const cb = document.getElementById(id);
+    setChecked(id, cb.checked);
+    document.getElementById(`row_${id}`).classList.toggle('checked', cb.checked);
+    // refresh progress count for that day
+    buildMealPlan();
+  }
+
+  function clearSection(section) {
+    if (section === 'meal') {
+      mealPlan.forEach((day, di) => day.meals.forEach((_, mi) => localStorage.removeItem(getMealId(di, mi))));
+      buildMealPlan();
+    } else {
+      shopData.forEach(cat => cat.items.forEach((_, ii) => localStorage.removeItem(getShopId(cat.cat, ii))));
+      buildShopList();
+    }
+  }
+
+  // ─── SHOPPING LIST DATA ──────────────────────────────────────────────────
+  const shopData = [
+    {
+      cat: 'Proteins',
+      items: [
+        'Chicken breasts (2.5 lbs)',
+        'Salmon fillets (1.5 lbs)',
+        'Cod fillets (1 lb)',
+        'Lean ground turkey (1 lb)',
+        'Deli turkey slices (½ lb)',
+        'Turkey breakfast sausage (1 pkg)',
+        'Canned tuna in water (2 cans)',
+        'Lean ground beef, 93% (½ lb)',
+        'Egg whites — carton (32 oz)',
+      ]
+    },
+    {
+      cat: 'Dairy',
+      items: [
+        'Cottage cheese, low-sodium (24 oz)',
+        'Plain Greek yogurt (32 oz)',
+        'String cheese (6-pack)',
+        'Low-fat coffee creamer',
+      ]
+    },
+    {
+      cat: 'Produce',
+      items: [
+        'Bell peppers — red & green (6)',
+        'Broccoli (1 large head)',
+        'Asparagus (1 bunch)',
+        'Green beans (12 oz bag)',
+        'Baby spinach (5 oz bag)',
+        'Romaine lettuce (1 head)',
+        'Avocados (5)',
+        'Blueberries (2 pints)',
+        'Sweet potatoes (3 medium)',
+        'Roma tomatoes (4)',
+        'Cucumber (1)',
+        'Apples (3)',
+        'Yellow onion (1)',
+      ]
+    },
+    {
+      cat: 'Grains & Carbs',
+      items: [
+        'Whole wheat bread (1 loaf)',
+        'Whole wheat tortillas (pkg)',
+        'Whole wheat penne pasta (1 lb)',
+        'Brown rice (2 lb bag)',
+        'Quinoa (1 lb bag)',
+        'Granola, low-sugar (12 oz)',
+        'Corn tortillas (pkg)',
+      ]
+    },
+    {
+      cat: 'Pantry & Sauces',
+      items: [
+        'Low-sodium marinara sauce (24 oz jar)',
+        'Black beans, low-sodium (2 cans)',
+        'Salsa, low-sodium (16 oz jar)',
+        'Fajita / taco seasoning',
+        'Olive oil',
+        'Dijon mustard',
+        'Lemon (2)',
+        'Red pepper flakes',
+        'Chicken broth, low-sodium',
+      ]
+    },
+    {
+      cat: 'Snacks',
+      items: [
+        'Yasso blueberry yogurt bars (1 box)',
+        'Clif Bars — chocolate chip (4)',
+      ]
+    },
+  ];
+
+  function getShopId(cat, idx) { return `shop_${cat}_${idx}`; }
+
+  function buildShopList() {
+    const container = document.getElementById('shopList');
+    container.innerHTML = '';
+    shopData.forEach(cat => {
+      const div = document.createElement('div');
+      div.className = 'shop-cat';
+      div.innerHTML = `
+        <div class="shop-cat-title">${cat.cat}</div>
+        ${cat.items.map((item, ii) => {
+          const id = getShopId(cat.cat, ii);
+          const checked = isChecked(id);
+          return `
+          <div class="shop-item ${checked ? 'checked' : ''}" id="shoprow_${id}">
+            <input type="checkbox" id="${id}" ${checked ? 'checked' : ''} onchange="toggleShop('${id}')">
+            <label for="${id}">${item}</label>
+          </div>`;
+        }).join('')}
+      `;
+      container.appendChild(div);
+    });
+  }
+
+  function toggleShop(id) {
+    const cb = document.getElementById(id);
+    setChecked(id, cb.checked);
+    document.getElementById(`shoprow_${id}`).classList.toggle('checked', cb.checked);
+  }
+
+  buildMealPlan();
+  buildShopList();
+  buildMacroTargets();
+  applyRefreshedData(DEMO_HEALTH_DATA);
+  const rs = document.getElementById('refreshStatus');
+  if (rs) { rs.textContent = 'Demo data loaded · synthetic Notion-shaped records'; rs.style.display = 'block'; };
+
+  // Hide setup card if already dismissed
+  if (localStorage.getItem('notesSetupDismissed') === '1') {
+    const card = document.getElementById('notesSetup');
+    if (card) card.style.display = 'none';
+  }
+
+  // Build plain-text shopping list for clipboard / Shortcuts
+  function buildPlainTextList() {
+    let text = '🛒 Shopping List — Apr 19–25, 2026\n';
+    shopData.forEach(cat => {
+      text += '\n' + cat.cat.toUpperCase() + '\n';
+      cat.items.forEach(item => { text += '• ' + item + '\n'; });
+    });
+    return text;
+  }
+
+  function copyList() {
+    const text = buildPlainTextList();
+    navigator.clipboard.writeText(text).then(() => {
+      const btn = document.getElementById('copyBtn');
+      btn.textContent = '✅ Copied!';
+      setTimeout(() => { btn.textContent = '📋 Copy list'; }, 2000);
+    }).catch(() => {
+      // Fallback for file:// protocol
+      const ta = document.createElement('textarea');
+      ta.value = buildPlainTextList();
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      const btn = document.getElementById('copyBtn');
+      btn.textContent = '✅ Copied!';
+      setTimeout(() => { btn.textContent = '📋 Copy list'; }, 2000);
+    });
+  }
+
+  // ── Tab navigation ───────────────────────────────────────────────────────
+  function switchTab(tab) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    const activeBtn = document.querySelector(`.tab-btn[data-tab="${tab}"]`);
+    if (activeBtn) activeBtn.classList.add('active');
+    document.getElementById('tab-week').classList.toggle('active', tab === 'week');
+    document.getElementById('tab-history').classList.toggle('active', tab === 'history');
+    document.getElementById('tab-mealplan').classList.toggle('active', tab === 'mealplan');
+  }
+
+  // ── History charts ───────────────────────────────────────────────────────
+  // Distance — all sessions Apr 13–22
+  charts.distanceH = new Chart(document.getElementById('distanceChartH'), {
+    type: 'bar',
+    data: {
+      labels: ['Apr 13','Apr 14','Apr 15','Apr 16','Apr 17','Apr 20','Apr 20 (2)','Apr 21','Apr 22'],
+      datasets: [{
+        label: 'Miles',
+        data: [2.13, 3.08, 2.46, 2.13, 1.79, 2.13, 1.94, 2.65, 0.71],
+        backgroundColor: '#3b82f6bb',
+        borderColor: '#3b82f6',
+        borderWidth: 2,
+        borderRadius: 8,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => ` ${ctx.parsed.y} miles` } }
+      },
+      scales: {
+        y: { beginAtZero: true, max: 4, grid: { color: '#f3f4f6' }, ticks: { callback: v => v + ' mi' } },
+        x: { grid: { display: false } }
+      }
+    }
+  });
+
+  // Calories — all days Apr 14–22
+  const calDaysH = ['Apr 14','Apr 15','Apr 16','Apr 17','Apr 18','Apr 19','Apr 20','Apr 21','Apr 22'];
+  charts.caloriesH = new Chart(document.getElementById('caloriesChartH'), {
+    type: 'bar',
+    data: {
+      labels: calDaysH,
+      datasets: [{
+        label: 'Calories',
+        data: [1150, 1140, 1244, 1534, 1943, 1312, 1937, 1320, 720],
+        backgroundColor: '#f59e0b88',
+        borderColor: '#f59e0b',
+        borderWidth: 2,
+        borderRadius: 8,
+      }, {
+        label: 'Target (2,500 cal)',
+        data: calDaysH.map(() => 2500),
+        type: 'line',
+        borderColor: '#6366f1',
+        borderDash: [5, 4],
+        borderWidth: 2,
+        pointRadius: 0,
+        fill: false,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: true, labels: { boxWidth: 12, font: { size: 11 } } },
+        tooltip: { callbacks: { label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y} cal` } }
+      },
+      scales: {
+        y: { beginAtZero: false, min: 500, max: 2800, grid: { color: '#f3f4f6' }, ticks: { callback: v => v + ' cal' } },
+        x: { grid: { display: false } }
+      }
+    }
+  });
+
+  // Macros stacked — all days Apr 14–22
+  charts.macrosH = new Chart(document.getElementById('macrosChartH'), {
+    type: 'bar',
+    data: {
+      labels: calDaysH,
+      datasets: [
+        { label: 'Protein (g)', data: [75, 61, 53, 78, 61, 85, 101, 70, 61], backgroundColor: '#3b82f6bb', borderRadius: 4 },
+        { label: 'Carbs (g)',   data: [85, 117, 162, 149, 239, 159, 225, 140, 54], backgroundColor: '#f59e0bbb', borderRadius: 4 },
+        { label: 'Fat (g)',     data: [55, 50, 40, 70, 76, 35, 72, 57, 30], backgroundColor: '#ef4444bb', borderRadius: 4 }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: true, labels: { boxWidth: 12, font: { size: 11 } } } },
+      scales: {
+        y: { stacked: true, grid: { color: '#f3f4f6' }, ticks: { callback: v => v + 'g' } },
+        x: { stacked: true, grid: { display: false } }
+      }
+    }
+  });
+
+  // BP — all readings (Jun 2025 baseline through May 4 2026)
+  charts.bpH = new Chart(document.getElementById('bpChartH'), {
+    type: 'line',
+    data: {
+      labels: ['Jun 4', 'Jun 9', 'Jun 10', 'Jun 23', 'Jun 25', 'Jul 2', 'Apr 24', 'Apr 26', 'Apr 27', 'Apr 29', 'May 1', 'May 2', 'May 4'],
+      datasets: [
+        {
+          label: 'Systolic',
+          data: [168, 151, 154, 146, 152, 132, 144, 174, 154, 145, 147, 168, 149],
+          borderColor: '#ef4444',
+          backgroundColor: '#ef444422',
+          fill: true,
+          tension: 0.3,
+          pointRadius: 5,
+          pointBackgroundColor: '#ef4444',
+        },
+        {
+          label: 'Diastolic',
+          data: [106, 95, 97, 99, 96, 93, 94, 104, 97, 96, 93, 93, 94],
+          borderColor: '#f59e0b',
+          backgroundColor: '#f59e0b11',
+          fill: false,
+          tension: 0.3,
+          pointRadius: 5,
+          pointBackgroundColor: '#f59e0b',
+        },
+        {
+          label: 'Normal systolic (120)',
+          data: [120, 120, 120, 120, 120, 120, 120, 120, 120, 120, 120, 120, 120],
+          borderColor: '#10b981',
+          borderDash: [4, 4],
+          borderWidth: 1.5,
+          pointRadius: 0,
+          fill: false,
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: true, labels: { boxWidth: 12, font: { size: 11 } } },
+        tooltip: { callbacks: { label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y} mmHg` } }
+      },
+      scales: {
+        y: { min: 80, max: 185, grid: { color: '#f3f4f6' }, ticks: { callback: v => v + ' mmHg' } },
+        x: { grid: { display: false } }
+      }
+    }
+  });
+
+  function sendToNotes() {
+    const text = buildPlainTextList();
+    // Copy to clipboard first, then fire the shortcut which reads from clipboard
+    const copyAndRun = () => {
+      const url = 'shortcuts://run-shortcut?name=Shopping%20List%20to%20Notes';
+      const btn = document.getElementById('notesBtn');
+      btn.textContent = '⏳ Sending…';
+      setTimeout(() => {
+        window.location.href = url;
+        setTimeout(() => { btn.textContent = '📝 Send to Notes'; }, 2500);
+      }, 800);
+    };
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(copyAndRun).catch(() => {
+        // file:// fallback
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        copyAndRun();
+      });
+    } else {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      copyAndRun();
+    }
+  }
+</script>
+
+</body>
+</html>
