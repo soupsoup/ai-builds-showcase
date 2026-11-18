@@ -1,0 +1,15 @@
+[Unit]
+Description=Deploy the newest builds commit if main changed
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=builds
+Group=builds
+WorkingDirectory=/var/www/builds
+EnvironmentFile=-/etc/builds.env
+ExecStart=/var/www/builds/deploy/vps/deploy.sh
+Nice=10
+CPUWeight=20
+IOSchedulingClass=idle
+TimeoutStartSec=20min
